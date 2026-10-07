@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aussie EcoGuard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6.3.20/dist/amazon-cognito-identity.min.js"></script>
+</head>
+<body class="pending">
+  <header class="topbar">
+    <strong>Aussie EcoGuard</strong>
+    <span><span id="user-name"></span> <button type="button" id="sign-out">Sign out</button></span>
+  </header>
+  <main class="card">
+    <h2>Welcome, <span id="first-name"></span></h2>
+    <p>Signed in as <strong id="user-email"></strong>.</p>
+  </main>
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>

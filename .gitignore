@@ -1,0 +1,22 @@
+# Secrets - never commit credentials (1.3)
+.env
+*.pem
+**/credentials*
+*service-account*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.aws-sam/
+
+# Node / frontend
+node_modules/
+dist/
+build/
+
+# Large media
+tests/sample-media/*.mp4
+tests/sample-media/*.mov
+
+.DS_Store

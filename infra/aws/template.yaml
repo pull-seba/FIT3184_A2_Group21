@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Aussie EcoGuard - core AWS resources (Cognito, S3, DynamoDB, tagging Lambda)
+
+# Deploy with stack name "ecoguard" (lowercase - it is part of the bucket name).
+
+Globals:
+  Function:
+    Runtime: python3.13
+    Timeout: 30
+    MemorySize: 256
+
+Resources:
+  # ---------- Auth (rubric 1.1) ----------
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-users
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: given_name
+          Required: true
+          Mutable: true
+        - Name: family_name
+          Required: true
+          Mutable: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          TemporaryPasswordValidityDays: 7
+      # Self sign-up: Cognito emails a code to verify the address.
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: Verify your Aussie EcoGuard account
+        EmailMessage: "Welcome to Aussie EcoGuard! Your verification code is {####}"
+      # Admin-invited users: Cognito emails a temporary password that must be changed at first sign-in.
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+        InviteMessageTemplate:
+          EmailSubject: Your Aussie EcoGuard account
+          EmailMessage: "You have been invited to Aussie EcoGuard. Username: {username} Temporary password: {####} - you will be asked to choose a new password when you first sign in."
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub ${AWS::StackName}-web
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false # browser app - a secret could not be kept private
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH # SRP: the password itself is never sent to Cognito
+        - ALLOW_REFRESH_TOKEN_AUTH
+      EnableTokenRevocation: true # sign-out revokes tokens server-side
+      PreventUserExistenceErrors: ENABLED
+      ReadAttributes: [email, email_verified, given_name, family_name]
+      WriteAttributes: [email, given_name, family_name]
+
+  # ---------- Storage ----------
+  MediaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # Explicit name so the Lambda policy can reference it without a circular dependency.
+      BucketName: !Sub ${AWS::StackName}-media-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET, PUT]
+            AllowedOrigins: ["*"] # TODO: restrict to the frontend URL once it is hosted
+            AllowedHeaders: ["*"]
+
+  MediaTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub ${AWS::StackName}-media
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: file_id # SHA-256 of the file content - doubles as the dedup key (2.1.1)
+          AttributeType: S
+      KeySchema:
+        - AttributeName: file_id
+          KeyType: HASH
+
+  # ---------- Tagging (rubric 2.1.3) ----------
+  TaggingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-tagging
+      CodeUri: ../../backend/aws/tagging/
+      Handler: app.handler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref MediaTable
+          CONFIG_BUCKET: !Sub ${AWS::StackName}-media-${AWS::AccountId}-${AWS::Region}
+          MODEL_CONFIG_KEY: config/model-config.json
+          LABEL_MAP_KEY: config/label-map.json
+      # Learner Lab blocks iam:CreateRole, so use the lab's pre-made role.
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/LabRole
+      # In a normal AWS account, replace Role with this least-privilege policy (1.3):
+      # read uploads + config, call Rekognition, insert records only.
+      # Policies:
+      #   - Statement:
+      #       - Effect: Allow
+      #         Action: s3:GetObject
+      #         Resource:
+      #           - !Sub arn:aws:s3:::${AWS::StackName}-media-${AWS::AccountId}-${AWS::Region}/uploads/*
+      #           - !Sub arn:aws:s3:::${AWS::StackName}-media-${AWS::AccountId}-${AWS::Region}/config/*
+      #       - Effect: Allow
+      #         Action: rekognition:DetectLabels
+      #         Resource: "*" # DetectLabels does not support resource-level permissions
+      #       - Effect: Allow
+      #         Action: dynamodb:PutItem
+      #         Resource: !GetAtt MediaTable.Arn
+      Events:
+        Upload:
+          Type: S3
+          Properties:
+            Bucket: !Ref MediaBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: uploads/
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+  MediaBucketName:
+    Value: !Ref MediaBucket
+  MediaTableName:
+    Value: !Ref MediaTable
