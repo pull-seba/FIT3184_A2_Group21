@@ -43,7 +43,7 @@ FIELDS = [
 # label = what goes in the `species` column ("none" = no target species expected)
 # quality = iNaturalist quality filter; pets are mostly "casual"/captive, so use "any"
 SPECIES = [
-    dict(folder="cat", label="cat", sci="Felis catus", quality="any", role="pet/pest", common="cat"),
+    dict(folder="cat", label="cat", sci="Felis catus", quality="any", role="pet", common="cat"),  # team decision 22 Oct: cats in this test set are pets
     dict(folder="dog", label="dog", sci="Canis lupus familiaris", quality="any", role="pet", common="dog"),
     dict(folder="fox", label="fox", sci="Vulpes vulpes", quality="research", role="pest", common="red fox"),
     dict(folder="rabbit", label="rabbit", sci="Oryctolagus cuniculus", quality="research", role="pest", common="European rabbit"),
