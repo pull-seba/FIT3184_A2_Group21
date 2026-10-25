@@ -2,20 +2,20 @@
 # Ownership is enforced only when branch protection on main turns on "Require review from Code Owners".
 # Later lines override earlier ones.
 
-*                                         @member1 @member2 @member3 @member4
+*                                         @member1 @xDylxnn @member3 @member4
 
 # Shared agreements: any change needs the whole team
-/CLAUDE.md                                @member1 @member2 @member3 @member4
-/.claude/                                 @member1 @member2 @member3 @member4
-/docs/                                    @member1 @member2 @member3 @member4
+/CLAUDE.md                                @member1 @xDylxnn @member3 @member4
+/.claude/                                 @member1 @xDylxnn @member3 @member4
+/docs/                                    @member1 @xDylxnn @member3 @member4
 
 # Contracts
-/docs/contracts/firestore-schema.md       @member2
-/docs/contracts/storage-layout.md         @member2
+/docs/contracts/firestore-schema.md       @xDylxnn
+/docs/contracts/storage-layout.md         @xDylxnn
 /docs/contracts/api-routes.md             @member1
-/docs/contracts/events.md                 @member1 @member2 @member3
+/docs/contracts/events.md                 @member1 @xDylxnn @member3
 /shared/tags.json                         @member3
-/shared/python/ecoguard_common/           @member2
+/shared/python/ecoguard_common/           @xDylxnn
 /shared/python/ecoguard_common/auth.py    @member1
 /shared/python/ecoguard_common/tag_match.py @member4
 
@@ -27,10 +27,10 @@
 /frontend/                                @member1
 
 # Member 2: ingestion and storage
-/functions/ingestion/                     @member2
-/scripts/seed_data.py                     @member2
-/frontend/src/pages/upload/               @member2
-/frontend/src/components/gallery/actions/delete/ @member2
+/functions/ingestion/                     @xDylxnn
+/scripts/seed_data.py                     @xDylxnn
+/frontend/src/pages/upload/               @xDylxnn
+/frontend/src/components/gallery/actions/delete/ @xDylxnn
 
 # Member 3: ML and detection
 /functions/ml/                            @member3
@@ -46,4 +46,4 @@
 /frontend/src/pages/chat/                 @member4
 
 # Re-applied after the gallery rule above
-/frontend/src/components/gallery/actions/delete/ @member2
+/frontend/src/components/gallery/actions/delete/ @xDylxnn
