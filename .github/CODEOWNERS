@@ -1,0 +1,49 @@
+# Replace @member1 to @member4 with the team's GitHub usernames.
+# Ownership is enforced only when branch protection on main turns on "Require review from Code Owners".
+# Later lines override earlier ones.
+
+*                                         @member1 @member2 @member3 @member4
+
+# Shared agreements: any change needs the whole team
+/CLAUDE.md                                @member1 @member2 @member3 @member4
+/.claude/                                 @member1 @member2 @member3 @member4
+/docs/                                    @member1 @member2 @member3 @member4
+
+# Contracts
+/docs/contracts/firestore-schema.md       @member2
+/docs/contracts/storage-layout.md         @member2
+/docs/contracts/api-routes.md             @member1
+/docs/contracts/events.md                 @member1 @member2 @member3
+/shared/tags.json                         @member3
+/shared/python/ecoguard_common/           @member2
+/shared/python/ecoguard_common/auth.py    @member1
+/shared/python/ecoguard_common/tag_match.py @member4
+
+# Member 1: identity and cross-cloud
+/infra/gateway/                           @member1
+/aws/iam/                                 @member1
+/aws/notify/                              @member1
+/functions/notify/                        @member1
+/frontend/                                @member1
+
+# Member 2: ingestion and storage
+/functions/ingestion/                     @member2
+/scripts/seed_data.py                     @member2
+/frontend/src/pages/upload/               @member2
+/frontend/src/components/gallery/actions/delete/ @member2
+
+# Member 3: ML and detection
+/functions/ml/                            @member3
+/frontend/src/pages/query-by-file/        @member3
+/frontend/src/pages/lost-pet/             @member3
+
+# Member 4: search and chatbot
+/functions/search/                        @member4
+/aws/lex/                                 @member4
+/frontend/src/components/gallery/         @member4
+/frontend/src/pages/search/               @member4
+/frontend/src/pages/tags/                 @member4
+/frontend/src/pages/chat/                 @member4
+
+# Re-applied after the gallery rule above
+/frontend/src/components/gallery/actions/delete/ @member2

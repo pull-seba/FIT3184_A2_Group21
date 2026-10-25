@@ -1,0 +1,28 @@
+# Personal Claude files
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Secrets: none should exist, but never commit them
+.env
+.env.*
+*.pem
+*credentials*.json
+service-account*.json
+
+# Shared package copied into a function folder for deploy
+functions/**/ecoguard_common/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Frontend
+node_modules/
+dist/
+.firebase/
+
+# OS
+.DS_Store
