@@ -1,0 +1,25 @@
+{
+  "_note": "Owner: member 3. Starter vocabulary from the spec; member 3 confirms it and replaces model_label_map with the real labels of the chosen models. Tag names are lowercase and singular and may contain spaces. Any label not in model_label_map is dropped.",
+  "version": 1,
+  "tags": [
+    { "name": "fox", "group": "pest" },
+    { "name": "rabbit", "group": "pest" },
+    { "name": "feral pig", "group": "pest" },
+    { "name": "cane toad", "group": "pest" },
+    { "name": "cat", "group": "pest or pet" },
+    { "name": "dog", "group": "pet" }
+  ],
+  "lost_pet_species": ["cat", "dog"],
+  "model_label_map": {
+    "fox": "fox",
+    "red fox": "fox",
+    "rabbit": "rabbit",
+    "european rabbit": "rabbit",
+    "pig": "feral pig",
+    "wild boar": "feral pig",
+    "cane toad": "cane toad",
+    "toad": "cane toad",
+    "cat": "cat",
+    "dog": "dog"
+  }
+}
