@@ -11,6 +11,6 @@ paths:
 - Upload: hash with `crypto.subtle.digest("SHA-256", ...)`, call `/uploads/init`, then PUT with `XMLHttpRequest` for progress, sending exactly the headers the response lists.
 - Photos sent to search are resized in a canvas to about 1024 px JPEG before base64 encoding, which also strips location metadata.
 - Every view handles loading, empty, error and success states and updates without a manual refresh.
-- Only public identifiers go in environment variables (`VITE_` user pool ID, client ID, identity pool ID, gateway URL). No secrets in the bundle.
+- Only public identifiers go in the Angular environment files under `src/environments/` (user pool ID, client ID, identity pool ID, gateway URL). No secrets in the bundle.
 - Thumbnails get alt text from their tags; controls are reachable by keyboard and have labels.
 - Each page lives in its own folder under `src/pages/`, owned by the feature's owner; ask member 1 to add routes.

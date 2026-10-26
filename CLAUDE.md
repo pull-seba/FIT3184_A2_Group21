@@ -21,7 +21,8 @@ Due 23:55 Mon 2 Nov 2026. Marks are awarded only in a live Zoom demo, where any 
 Member 1: identity and cross-cloud. Member 2: ingestion and storage. Member 3: ML and detection. Member 4: search and chatbot.
 
 ```text
-frontend/                       React app; shell, routing, auth pages, API client: 1
+frontend/                       Angular app; shell, routing, auth pages, API client: 1
+  src/app/                      root component, routes (app.routes.ts) and providers: 1
   src/api/                      shared API client (attaches the Cognito ID token): 1
   src/components/gallery/       the one results gallery: 4 (delete action: 2)
   src/pages/<page>/             upload: 2 · search, tags, chat: 4 · query-by-file, lost-pet: 3 · notifications: 1
@@ -62,13 +63,13 @@ docs/                           requirements, contracts, plans
 
 ## Stack
 - Functions: Python 3.12 with `functions-framework`; tests with `pytest`, run from each function's folder.
-- Frontend: React, Vite and TypeScript on Firebase Hosting (Proposed).
+- Frontend: Angular 21 (LTS) and TypeScript on Firebase Hosting (Proposed); unit tests with Vitest.
 - Regions: GCP `australia-southeast1`, AWS `ap-southeast-2` (Proposed).
 - Anything marked Proposed in `docs/decisions.md` may still change: flag code that depends on it.
 
 ## Commands
 - Function tests: `cd functions/<area>/<function> && python -m pytest`
-- Frontend: `cd frontend && npm run dev`, `npm run build`
+- Frontend: `cd frontend && npm start` (dev server on http://localhost:5173), `npm run build`, `npm test`
 - Check every route rejects calls without a token: `API_BASE=<gateway url> scripts/check-no-token.sh`
 - Deploys (`gcloud`, `firebase`, `aws`) always need a person to approve them.
 
