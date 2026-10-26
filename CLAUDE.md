@@ -63,13 +63,13 @@ docs/                           requirements, contracts, plans
 
 ## Stack
 - Functions: Python 3.12 with `functions-framework`; tests with `pytest`, run from each function's folder.
-- Frontend: Angular 21 (LTS) and TypeScript on Firebase Hosting (Proposed); unit tests with Vitest.
+- Frontend: Angular 21 (LTS) and TypeScript on Firebase Hosting (Proposed). No frontend unit tests: `ng generate` skips spec files.
 - Regions: GCP `australia-southeast1`, AWS `ap-southeast-2` (Proposed).
 - Anything marked Proposed in `docs/decisions.md` may still change: flag code that depends on it.
 
 ## Commands
 - Function tests: `cd functions/<area>/<function> && python -m pytest`
-- Frontend: `cd frontend && npm start` (dev server on http://localhost:5173), `npm run build`, `npm test`
+- Frontend: `cd frontend && npm start` (dev server on http://localhost:5173), `npm run build`
 - Check every route rejects calls without a token: `API_BASE=<gateway url> scripts/check-no-token.sh`
 - Deploys (`gcloud`, `firebase`, `aws`) always need a person to approve them.
 
