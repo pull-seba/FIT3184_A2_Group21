@@ -11,7 +11,7 @@ Finish the schema and contracts today: members 1, 3 and 4 build on them. Then ge
 - `docs/contracts/firestore-schema.md`, `docs/contracts/storage-layout.md`
 - `shared/python/ecoguard_common/urls.py` (URL to file ID)
 - `scripts/seed_data.py`
-- `frontend/src/pages/upload/` and the delete action in the gallery
+- `frontend/src/app/pages/upload/` and the delete action in the gallery
 
 ## Steps in order
 

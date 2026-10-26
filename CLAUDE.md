@@ -23,9 +23,9 @@ Member 1: identity and cross-cloud. Member 2: ingestion and storage. Member 3: M
 ```text
 frontend/                       Angular app; shell, routing, auth pages, API client: 1
   src/app/                      root component, routes (app.routes.ts) and providers: 1
-  src/api/                      shared API client (attaches the Cognito ID token): 1
-  src/components/gallery/       the one results gallery: 4 (delete action: 2)
-  src/pages/<page>/             upload: 2 · search, tags, chat: 4 · query-by-file, lost-pet: 3 · notifications: 1
+    api/                        shared API client (attaches the Cognito ID token): 1
+    components/gallery/         the one results gallery: 4 (delete action: 2)
+    pages/<page>/               upload: 2 · search, tags, chat: 4 · query-by-file, lost-pet: 3 · notifications: 1
 functions/                      GCP Cloud Run functions, one folder per function
   ingestion/                    upload_init, process_upload, get_file, delete_files: 2
   ml/                           tagging container, search_by_file, lost_pet: 3
