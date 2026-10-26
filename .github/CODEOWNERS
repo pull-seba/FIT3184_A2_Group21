@@ -2,12 +2,12 @@
 # Ownership is enforced only when branch protection on main turns on "Require review from Code Owners".
 # Later lines override earlier ones.
 
-*                                         @member1 @xDylxnn @member3 @member4
+*                                         @member1 @xDylxnn @member3 @jenul-ferdinand
 
 # Shared agreements: any change needs the whole team
-/CLAUDE.md                                @member1 @xDylxnn @member3 @member4
-/.claude/                                 @member1 @xDylxnn @member3 @member4
-/docs/                                    @member1 @xDylxnn @member3 @member4
+/CLAUDE.md                                @member1 @xDylxnn @member3 @jenul-ferdinand
+/.claude/                                 @member1 @xDylxnn @member3 @jenul-ferdinand
+/docs/                                    @member1 @xDylxnn @member3 @jenul-ferdinand
 
 # Contracts
 /docs/contracts/firestore-schema.md       @xDylxnn
@@ -17,7 +17,7 @@
 /shared/tags.json                         @member3
 /shared/python/ecoguard_common/           @xDylxnn
 /shared/python/ecoguard_common/auth.py    @member1
-/shared/python/ecoguard_common/tag_match.py @member4
+/shared/python/ecoguard_common/tag_match.py @jenul-ferdinand
 
 # Member 1: identity and cross-cloud
 /infra/gateway/                           @member1
@@ -38,12 +38,12 @@
 /frontend/src/pages/lost-pet/             @member3
 
 # Member 4: search and chatbot
-/functions/search/                        @member4
-/aws/lex/                                 @member4
-/frontend/src/components/gallery/         @member4
-/frontend/src/pages/search/               @member4
-/frontend/src/pages/tags/                 @member4
-/frontend/src/pages/chat/                 @member4
+/functions/search/                        @jenul-ferdinand
+/aws/lex/                                 @jenul-ferdinand
+/frontend/src/components/gallery/         @jenul-ferdinand
+/frontend/src/pages/search/               @jenul-ferdinand
+/frontend/src/pages/tags/                 @jenul-ferdinand
+/frontend/src/pages/chat/                 @jenul-ferdinand
 
 # Re-applied after the gallery rule above
 /frontend/src/components/gallery/actions/delete/ @xDylxnn
