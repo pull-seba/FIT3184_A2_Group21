@@ -29,21 +29,21 @@
 # Member 2: ingestion and storage
 /functions/ingestion/                     @xDylxnn
 /scripts/seed_data.py                     @xDylxnn
-/frontend/src/pages/upload/               @xDylxnn
-/frontend/src/components/gallery/actions/delete/ @xDylxnn
+/frontend/src/app/pages/upload/           @xDylxnn
+/frontend/src/app/components/gallery/actions/delete/ @xDylxnn
 
 # Member 3: ML and detection
 /functions/ml/                            @member3
-/frontend/src/pages/query-by-file/        @member3
-/frontend/src/pages/lost-pet/             @member3
+/frontend/src/app/pages/query-by-file/    @member3
+/frontend/src/app/pages/lost-pet/         @member3
 
 # Member 4: search and chatbot
 /functions/search/                        @member4
 /aws/lex/                                 @member4
-/frontend/src/components/gallery/         @member4
-/frontend/src/pages/search/               @member4
-/frontend/src/pages/tags/                 @member4
-/frontend/src/pages/chat/                 @member4
+/frontend/src/app/components/gallery/     @member4
+/frontend/src/app/pages/search/           @member4
+/frontend/src/app/pages/tags/             @member4
+/frontend/src/app/pages/chat/             @member4
 
 # Re-applied after the gallery rule above
-/frontend/src/components/gallery/actions/delete/ @xDylxnn
+/frontend/src/app/components/gallery/actions/delete/ @xDylxnn

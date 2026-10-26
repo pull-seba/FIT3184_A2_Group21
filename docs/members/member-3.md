@@ -7,7 +7,7 @@ You own 16 marks alone (2.1.3, 2.2.3, 2.2.4) and share 3.2 (search by file and l
 ## What you own
 - `functions/ml/`: the tagging service (container), `search_by_file`, `lost_pet`
 - `shared/tags.json`, `config/model`, the `sightings` collection and its vector index, the models bucket
-- `frontend/src/pages/query-by-file/` and `frontend/src/pages/lost-pet/`
+- `frontend/src/app/pages/query-by-file/` and `frontend/src/app/pages/lost-pet/`
 
 ## Steps by phase
 | Phase | Steps |
