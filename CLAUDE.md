@@ -70,6 +70,7 @@ docs/                           requirements, contracts, plans
 ## Commands
 - Function tests: `cd functions/<area>/<function> && python -m pytest`
 - Frontend: `cd frontend && npm start` (dev server on http://localhost:5173), `npm run build`
+- New page or component: `cd frontend && npx ng g c pages/<page>` or `npx ng g c components/<name>`; both land under `src/app/`.
 - Check every route rejects calls without a token: `API_BASE=<gateway url> scripts/check-no-token.sh`
 - Deploys (`gcloud`, `firebase`, `aws`) always need a person to approve them.
 
