@@ -8,7 +8,7 @@ You own 14 marks alone (1.1, 1.2, 1.3, 2.3.3) and share 3.1 (auth screens) and 3
 - `infra/gateway/openapi.yaml` and `docs/contracts/api-routes.md` (route JSON comes from each route's owner)
 - Cognito user pool, app client and identity pool; `aws/iam/`; `aws/notify/`; `functions/notify/`
 - `shared/python/ecoguard_common/auth.py`
-- `frontend/` shell, routing, auth guard, `src/api/` client, auth pages, notifications page
+- `frontend/` shell, routing, auth guard, `src/app/api/` client, auth pages, notifications page
 
 ## Steps by phase
 | Phase | Steps |
