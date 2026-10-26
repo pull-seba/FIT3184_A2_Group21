@@ -1,6 +1,6 @@
 # Member 4: search and chatbot
 
-Name and ID: (add)
+Name and ID: Jenul Ferdinand (33119805)
 
 You own 22 marks alone (2.2.1, 2.2.2, 2.3.1, 2.2.5, 3.3), the heaviest load, and share 3.2 (tag query UI and gallery) and 3.4 (bulk tag controls). The gallery and `tag_match` are used by members 2 and 3, so build them early.
 
