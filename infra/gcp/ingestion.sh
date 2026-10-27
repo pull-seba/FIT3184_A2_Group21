@@ -32,12 +32,15 @@ service_account() {
   echo "$email"
 }
 # A new account takes a few seconds to reach IAM ("does not exist"), so its grants retry briefly.
-bucket_role() {
+retry() {
   for _ in 1 2 3 4 5 6; do
-    gcloud storage buckets add-iam-policy-binding "gs://$1" --member="serviceAccount:$2" --role="$3" >/dev/null && return
+    "$@" && return
     sleep 5
   done
   return 1
+}
+bucket_role() {
+  retry gcloud storage buckets add-iam-policy-binding "gs://$1" --member="serviceAccount:$2" --role="$3" >/dev/null
 }
 
 UPLOAD_INIT=$(service_account fn-upload-init "upload_init (member 2)")
@@ -55,7 +58,7 @@ bucket_role "$MEDIA_BUCKET" "$PROCESS_UPLOAD" roles/storage.objectUser
 
 # ---- Needs Project IAM Admin and Service Account Admin (or Owner) ----
 project_role() {
-  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="$1" --role="$2" --condition=None >/dev/null
+  retry gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="$1" --role="$2" --condition=None >/dev/null
 }
 # Firestore roles can only be granted on the project. upload_init only reads (the duplicate check);
 # process_upload also merges the base record.
@@ -67,9 +70,11 @@ gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PR
 
 # The upload trigger: Cloud Storage publishes each event to Pub/Sub through its service agent (one grant
 # covers every storage trigger in the project, member 3's too), and Eventarc delivers it to the function
-# as process_upload's own account.
+# as process_upload's own account. Asking for the service agent creates it the first time, but in a new
+# project it can take minutes to reach IAM, so this grant warns instead of stopping the script.
 STORAGE_AGENT=$(gcloud storage service-agent --project="$PROJECT_ID")
-project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher
+project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher 2>/dev/null ||
+  echo "IAM doesn't know $STORAGE_AGENT yet: wait a few minutes and re-run this script before deploying process-upload." >&2
 project_role "serviceAccount:$PROCESS_UPLOAD" roles/eventarc.eventReceiver
 # The function allows no unauthenticated calls, so the trigger's account needs Invoker on its service,
 # which exists only after the first deploy.
