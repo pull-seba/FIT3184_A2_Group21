@@ -41,6 +41,7 @@ bucket_role() {
 }
 
 UPLOAD_INIT=$(service_account fn-upload-init "upload_init (member 2)")
+PROCESS_UPLOAD=$(service_account fn-process-upload "process_upload (member 2)")
 
 # A signed URL acts with its signer's permissions, so upload_init needs whatever its URLs do: PUT new
 # originals, and GET the original and thumbnail when it answers "duplicate" with a FileSummary.
@@ -48,12 +49,35 @@ bucket_role "$MEDIA_BUCKET" "$UPLOAD_INIT" roles/storage.objectCreator
 bucket_role "$MEDIA_BUCKET" "$UPLOAD_INIT" roles/storage.objectViewer
 bucket_role "$DERIVED_BUCKET" "$UPLOAD_INIT" roles/storage.objectViewer
 
+# process_upload reads each new original to hash it and deletes rejected ones. objectUser is the
+# narrowest predefined role that includes delete.
+bucket_role "$MEDIA_BUCKET" "$PROCESS_UPLOAD" roles/storage.objectUser
+
 # ---- Needs Project IAM Admin and Service Account Admin (or Owner) ----
-# Read files/<sha256> for the duplicate check. Firestore roles can only be granted on the project.
-gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$UPLOAD_INIT" \
-  --role=roles/datastore.viewer --condition=None >/dev/null
+project_role() {
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="$1" --role="$2" --condition=None >/dev/null
+}
+# Firestore roles can only be granted on the project. upload_init only reads (the duplicate check);
+# process_upload also merges the base record.
+project_role "serviceAccount:$UPLOAD_INIT" roles/datastore.viewer
+project_role "serviceAccount:$PROCESS_UPLOAD" roles/datastore.user
 # Signing without a key file goes through the IAM credentials API, which needs Token Creator on itself.
 gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PROJECT_ID" \
   --member="serviceAccount:$UPLOAD_INIT" --role=roles/iam.serviceAccountTokenCreator >/dev/null
 
-echo "Ingestion resources ready: gs://$MEDIA_BUCKET, gs://$DERIVED_BUCKET, $UPLOAD_INIT"
+# The upload trigger: Cloud Storage publishes each event to Pub/Sub through its service agent (one grant
+# covers every storage trigger in the project, member 3's too), and Eventarc delivers it to the function
+# as process_upload's own account.
+STORAGE_AGENT=$(gcloud storage service-agent --project="$PROJECT_ID")
+project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher
+project_role "serviceAccount:$PROCESS_UPLOAD" roles/eventarc.eventReceiver
+# The function allows no unauthenticated calls, so the trigger's account needs Invoker on its service,
+# which exists only after the first deploy.
+if gcloud run services describe process-upload --project="$PROJECT_ID" --region="$REGION" >/dev/null 2>&1; then
+  gcloud run services add-iam-policy-binding process-upload --project="$PROJECT_ID" --region="$REGION" \
+    --member="serviceAccount:$PROCESS_UPLOAD" --role=roles/run.invoker >/dev/null
+else
+  echo "process-upload isn't deployed yet: deploy it, then re-run this script for its Invoker grant." >&2
+fi
+
+echo "Ingestion resources ready: gs://$MEDIA_BUCKET, gs://$DERIVED_BUCKET, $UPLOAD_INIT, $PROCESS_UPLOAD"
