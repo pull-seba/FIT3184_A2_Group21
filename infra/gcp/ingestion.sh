@@ -71,9 +71,15 @@ gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PR
 # The upload trigger: Cloud Storage publishes each event to Pub/Sub through its service agent (one grant
 # covers every storage trigger in the project, member 3's too), and Eventarc delivers it to the function
 # as process_upload's own account. Asking for the service agent creates it the first time, but in a new
-# project it can take minutes to reach IAM, so this grant warns instead of stopping the script.
+# project IAM took over an hour to accept it (27 Oct), so this grant warns instead of stopping the script.
+# IAM can still reject it after the grant exists, so it's skipped once the grant is there.
 STORAGE_AGENT=$(gcloud storage service-agent --project="$PROJECT_ID")
-project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher 2>/dev/null ||
+has_project_role() {
+  gcloud projects get-iam-policy "$PROJECT_ID" --flatten="bindings[].members" \
+    --filter="bindings.role=$2 AND bindings.members=$1" --format="value(bindings.role)" | grep -q .
+}
+has_project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher ||
+  project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher 2>/dev/null ||
   echo "IAM doesn't know $STORAGE_AGENT yet: wait a few minutes and re-run this script before deploying process-upload." >&2
 project_role "serviceAccount:$PROCESS_UPLOAD" roles/eventarc.eventReceiver
 # The function allows no unauthenticated calls, so the trigger's account needs Invoker on its service,
