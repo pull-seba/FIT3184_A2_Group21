@@ -1,0 +1,20 @@
+name: Ruff
+
+# Only Python changes trigger it, and the timeout caps a stuck run (default is
+# 6 hours), so it stays well inside GitHub Free's 2,000 private-repo minutes.
+on:
+  pull_request:
+    paths: ["**.py", "ruff.toml", ".github/workflows/ruff.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/ruff-action@v4
+        with:
+          args: format --diff
