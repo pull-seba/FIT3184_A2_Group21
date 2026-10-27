@@ -1,9 +1,4 @@
-"""AND and minimum-count tag matching, shared by every search. Owner: member 4.
-
-A tag query maps tag names to minimum counts: {"feral pig": 1, "cane toad": 3} means at least one
-feral pig AND at least three cane toads. tag_query (member 4) and search_by_file (member 3) both
-filter with matches(), so every search applies the same rule.
-"""
+"""AND and minimum-count tag matching, shared by every search. Owner: member 4."""
 
 
 class QueryError(ValueError):
