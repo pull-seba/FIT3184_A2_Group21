@@ -1,4 +1,5 @@
 """The caller's identity, as forwarded by API Gateway. Owner: member 1 (starter from the team kit)."""
+
 import base64
 import json
 
