@@ -24,7 +24,7 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Proposal | Owner | Confirm by | Notes |
 | --- | --- | --- | --- |
 | Functions in Python 3.12 with `functions-framework` | All | Mon 26 Oct | OpenCV and YOLO are Python |
-| Frontend in React, Vite and TypeScript on Firebase Hosting | 1 | Mon 26 Oct | Firebase Hosting gives HTTPS, which Cognito callback URLs need |
+| Frontend in Angular 21 (LTS) and TypeScript on Firebase Hosting | 1 | Mon 26 Oct | Firebase Hosting gives HTTPS, which Cognito callback URLs need. Member 4 proposed Angular instead of React and Vite on 27 Oct; member 1 to confirm |
 | Regions GCP `australia-southeast1`, AWS `ap-southeast-2` | 1 | Mon 26 Oct | Both Sydney |
 | Separate media and derived buckets | 2 | Mon 26 Oct | Storage triggers can't filter by prefix |
 | Frames handed to tagging through the `frames-ready` topic | 2, 3 | Mon 26 Oct | Settles the frame handoff crossover |

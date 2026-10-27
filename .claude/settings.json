@@ -10,7 +10,7 @@
       "Bash(git branch *)",
       "Bash(python -m pytest)",
       "Bash(python -m pytest *)",
-      "Bash(npm run dev)",
+      "Bash(npm start)",
       "Bash(npm run build)",
       "Bash(npm run lint)",
       "Bash(npm test)"
