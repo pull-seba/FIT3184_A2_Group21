@@ -49,7 +49,7 @@ def test_list_means_at_least_one_and_names_are_normalised():
 def test_rejects_bad_queries(body, code):
     with pytest.raises(QueryError) as excinfo:
         parse_query(body, KNOWN)
-    assert excinfo.value.code == code
+    assert excinfo.value.args[0] == code
 
 
 def test_skips_inactive_untagged_and_empty_queries():

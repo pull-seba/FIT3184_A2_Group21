@@ -2,11 +2,7 @@
 
 
 class QueryError(ValueError):
-    """A tag query the API rejects with 400. `code` goes in the error body from docs/contracts/api-routes.md."""
-
-    def __init__(self, code, message):
-        super().__init__(message)
-        self.code = code
+    """A tag query the API rejects with 400. Its args are (code, message) for the error body."""
 
 
 def parse_query(body, known_tags):
