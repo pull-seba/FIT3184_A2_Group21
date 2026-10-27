@@ -64,7 +64,7 @@ docs/                           requirements, contracts, plans
 ## Stack
 - Functions: Python 3.12 with `functions-framework`; tests with `pytest`, run from each function's folder.
 - Frontend: Angular 21 (LTS) and TypeScript on Firebase Hosting (Proposed). No frontend unit tests: `ng generate` skips spec files.
-- Regions: GCP `australia-southeast1`, AWS `ap-southeast-2` (Proposed).
+- Regions: GCP `us-east1`, AWS `us-east-1` (Decided 27 Oct: Firestore and the Cognito user pool already live there and can't move).
 - Anything marked Proposed in `docs/decisions.md` may still change: flag code that depends on it.
 
 ## Commands

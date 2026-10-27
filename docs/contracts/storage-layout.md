@@ -3,7 +3,7 @@
 Owner: member 2 (the models bucket: member 3). Change it only through the owner's PR.
 
 ## Buckets
-All buckets are private, use uniform bucket-level access with public access prevention enforced, and live in the GCP region.
+All buckets are private, use uniform bucket-level access with public access prevention enforced, and live in `us-east1`, with Firestore and the functions: an Eventarc Cloud Storage trigger must be in its bucket's region, and a bucket's location can't change once it's created.
 
 | Bucket | Object key | Written by | Read by | Triggers |
 | --- | --- | --- | --- | --- |
