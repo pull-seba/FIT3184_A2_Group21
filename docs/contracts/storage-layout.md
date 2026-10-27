@@ -22,7 +22,7 @@ Photos sent to `/search/by-file` and `/search/lost-pet` are never written to any
 - Thumbnails: JPEG, longest side 320 px, aspect ratio preserved, quality 80. Videos get a poster thumbnail from their first frame at the same key.
 - Frames: one per 10 s of video. `<index>` is four digits counting from `0000` (0 s); `0001` is 10 s. A clip shorter than 10 s gives one frame.
 
-## Accepted uploads (Proposed)
+## Accepted uploads
 | Content type | Extension | Size limit |
 | --- | --- | --- |
 | `image/jpeg` | `jpg` | 20 MB |
@@ -34,7 +34,7 @@ Photos sent to `/search/by-file` and `/search/lost-pet` are never written to any
 HEIC isn't accepted: OpenCV can't read it.
 
 ## Signed URLs
-- Upload: V4, `PUT`, valid 15 minutes, for `<file_id>.<ext>` in the media bucket. Signed headers the browser must send exactly: `Content-Type`, `x-goog-if-generation-match: 0` (so an existing object can't be overwritten), `x-goog-meta-uploaded-by` (Cognito `sub`), `x-goog-meta-original-filename` (URL-encoded). A `412` response means the object already exists: treat it as a duplicate.
+- Upload: V4, `PUT`, valid 15 minutes, for `<file_id>.<ext>` in the media bucket. Signed headers the browser must send exactly: `Content-Type`, `x-goog-if-generation-match: 0` (so an existing object can't be overwritten), `x-goog-meta-uploaded-by` (Cognito `sub`), `x-goog-meta-original-filename` (URL-encoded), `x-goog-meta-is-public` (`true` or `false`, from the init request). A `412` response means the object already exists: treat it as a duplicate.
 - Download: V4, `GET`, valid 60 minutes, created per response for originals and thumbnails.
 - Functions sign without key files, through IAM signing; each signing function's service account needs Service Account Token Creator on itself.
 

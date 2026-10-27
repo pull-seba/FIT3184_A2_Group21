@@ -27,7 +27,7 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 | `duration_s` | number | 2 `process_upload` | Videos only |
 | `uploaded_by` | string | 2 `process_upload` | Cognito `sub` of the uploader |
 | `uploaded_at` | timestamp | 2 `process_upload` | |
-| `is_public` | boolean | 2 `process_upload` | Whether the file counts as a public sighting for lost pet search. Default `true` (Proposed) |
+| `is_public` | boolean | 2 `process_upload` | Whether the file counts as a public sighting for lost pet search. Read from the object's `is-public` metadata, which `upload_init` signs from the request; default `true` |
 | `status` | `"active"` or `"deleting"` | 2 `process_upload`, `delete_files` | Queries and `upload_init` match only `"active"`. A document tagging wrote before the base record has no `status`, so it never matches |
 | `pipeline.thumbnail` | `"done"` or `"failed"` | 2 `process_upload` | Each pipeline step writes only its own key |
 | `pipeline.frames` | `"done"` or `"failed"` | 2 `process_upload` | Videos only |
