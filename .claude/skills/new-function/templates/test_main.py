@@ -1,4 +1,5 @@
 """Tests mock every cloud client; nothing here touches the shared project."""
+
 import base64
 import json
 from unittest import mock
@@ -14,11 +15,17 @@ app = flask.Flask(__name__)
 def gateway_headers(sub="test-user", email="test@example.com"):
     """What API Gateway adds after it verifies a Cognito ID token."""
     raw = json.dumps({"sub": sub, "email": email}).encode()
-    return {"X-Apigateway-Api-Userinfo": base64.urlsafe_b64encode(raw).decode().rstrip("=")}
+    return {
+        "X-Apigateway-Api-Userinfo": base64.urlsafe_b64encode(raw)
+        .decode()
+        .rstrip("=")
+    }
 
 
 def call(json_body=None, headers=None, data=None):
-    with app.test_request_context(method="POST", json=json_body, data=data, headers=headers or {}):
+    with app.test_request_context(
+        method="POST", json=json_body, data=data, headers=headers or {}
+    ):
         return main.handler(flask.request)
 
 
