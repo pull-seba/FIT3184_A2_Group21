@@ -52,7 +52,8 @@ def test_rejects_bad_queries(body, code):
     assert excinfo.value.code == code
 
 
-def test_skips_deleting_untagged_and_empty_queries():
+def test_skips_inactive_untagged_and_empty_queries():
     assert not matches(doc({"fox": 4}, status="deleting"), {"fox": 1})
+    assert not matches({"tags": {"fox": 4}}, {"fox": 1})  # tagging wrote before the upload record
     assert not matches({"status": "active"}, {"fox": 1})  # not tagged yet
     assert not matches(doc({"fox": 1}), {})

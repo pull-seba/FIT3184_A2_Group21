@@ -43,10 +43,11 @@ def parse_query(body, known_tags):
 def matches(doc, query):
     """True if a `files` document has every queried tag at or above its minimum count (AND).
 
-    Files being deleted never match. An empty query matches nothing, so a search-by-file photo
-    with no animals in it finds no files instead of every file.
+    Only "active" files match: not files being deleted, and not documents tagging wrote before the
+    upload record existed. An empty query matches nothing, so a search-by-file photo with no
+    animals in it finds no files instead of every file.
     """
-    if not query or doc.get("status") == "deleting":
+    if not query or doc.get("status") != "active":
         return False
     tags = doc.get("tags") or {}
     return all(tags.get(tag, 0) >= count for tag, count in query.items())
