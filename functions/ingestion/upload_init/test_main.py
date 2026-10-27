@@ -36,12 +36,19 @@ def init_body(**overrides):
     return body
 
 
+def fake_generate_signed_url(**kwargs):
+    """Like the real library, adds Host to the headers dict it's given."""
+    if kwargs.get("headers") is not None:
+        kwargs["headers"]["Host"] = "storage.googleapis.com"
+    return "https://signed.example"
+
+
 @pytest.fixture(autouse=True)
 def clouds(monkeypatch):
     """Fresh fakes for every test: Firestore has no record and every signed URL is a fixed string."""
     db, gcs = mock.Mock(), mock.Mock()
     db.collection.return_value.document.return_value.get.return_value = mock.Mock(exists=False)
-    gcs.bucket.return_value.blob.return_value.generate_signed_url.return_value = "https://signed.example"
+    gcs.bucket.return_value.blob.return_value.generate_signed_url.side_effect = fake_generate_signed_url
     monkeypatch.setattr(main, "db", db)
     monkeypatch.setattr(main, "gcs", gcs)
     monkeypatch.setattr(main, "credentials", mock.Mock(valid=True, service_account_email=SIGNER, token="tok"))
@@ -140,8 +147,10 @@ def test_new_file_gets_signed_put_url_with_contract_headers(clouds):
     assert kwargs["version"] == "v4" and kwargs["method"] == "PUT"
     assert kwargs["expiration"] == timedelta(minutes=15)
     assert kwargs["content_type"] == "image/jpeg"
-    # Everything the browser is told to send, apart from Content-Type, is part of the signature.
-    assert kwargs["headers"] == {k: v for k, v in body["headers"].items() if k != "Content-Type"}
+    # Everything the browser is told to send, apart from Content-Type, is part of the signature
+    # (the fake adds Host to its own copy, as the real library does).
+    signed = {k: v for k, v in kwargs["headers"].items() if k != "Host"}
+    assert signed == {k: v for k, v in body["headers"].items() if k != "Content-Type"}
     assert kwargs["service_account_email"] == SIGNER and kwargs["access_token"] == "tok"
 
 

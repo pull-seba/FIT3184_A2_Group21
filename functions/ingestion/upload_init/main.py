@@ -70,7 +70,9 @@ def signed_url(bucket: str, key: str, method: str, minutes: int, content_type=No
         expiration=timedelta(minutes=minutes),
         method=method,
         content_type=content_type,
-        headers=headers,
+        # A copy: the library adds "Host" to the dict it's given, and the caller returns its headers
+        # to the browser, which must send exactly the contract's list (browsers refuse to set Host).
+        headers=dict(headers) if headers else None,
         service_account_email=credentials.service_account_email,
         access_token=credentials.token,
     )
