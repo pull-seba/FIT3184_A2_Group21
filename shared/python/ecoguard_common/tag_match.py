@@ -5,7 +5,7 @@ class QueryError(ValueError):
     """A tag query the API rejects with 400. Its args are (code, message) for the error body."""
 
 
-def parse_query(body, known_tags):
+def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:
     """Turn a request body into {tag: minimum count}, or raise QueryError.
 
     Accepts {"fox": 2} or a list of names, where ["cat"] means {"cat": 1}. Names are trimmed and
@@ -31,7 +31,7 @@ def parse_query(body, known_tags):
     return query
 
 
-def matches(doc, query):
+def matches(doc: dict, query: dict[str, int]) -> bool:
     """True if a `files` document has every queried tag at or above its minimum count (AND).
 
     Only "active" files match: not files being deleted, and not documents tagging wrote before the
