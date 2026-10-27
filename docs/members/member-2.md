@@ -17,7 +17,7 @@ Finish the schema and contracts today: members 1, 3 and 4 build on them. Then ge
 
 | # | Step | Due | Done when | Watch out for |
 | --- | --- | --- | --- | --- |
-| 1 | Schema and key naming | Mon 26 | The schema lists every field, its type and its writer, and the team has read it | Tags stay a species-to-count map; store bucket and key, never URLs |
+| 1 | Schema and key naming | Mon 26 | The schema lists every field, its type and its writer, and the team has read it | Tags stay a species-to-count map; store bucket, key and `gs://` address, never signed URLs |
 | 2 | Route and frame contracts | Mon 26 | JSON for `/uploads/init` and `/files/delete` is with member 1; the frame handoff is agreed with member 3 | Settle `frames-ready` before either of you writes code |
 | 3 | Buckets and upload init | Tue 27 | The browser gets a signed PUT URL, or a duplicate response for a known hash | Signing from Cloud Run needs Service Account Token Creator on the function's own account; bucket CORS must allow PUT from the app and localhost; HEIC isn't readable by OpenCV |
 | 4 | Process upload: verify and record | Tue 27 | Uploading a file creates its record within seconds | Recompute the SHA-256 and delete the object on a mismatch; carry the uploader from init as object metadata |

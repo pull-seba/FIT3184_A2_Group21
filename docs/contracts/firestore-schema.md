@@ -6,7 +6,7 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 - `file_id` and every `files` document ID is the lowercase hex SHA-256 of the file's bytes (64 characters).
 - Write only the fields your function owns, using `set(data, merge=True)` or `update()`. Never call `set()` without `merge=True` on a document that may exist.
 - Every `*_at` field is written with `firestore.SERVER_TIMESTAMP`.
-- Store bucket names and object keys. Never store a URL; sign one when building a response.
+- Store bucket names, object keys and each object's permanent `gs://` address. Never store a signed URL: it expires. Sign one when building a response.
 - Tag names must exist in `shared/tags.json`. Tag names can contain spaces ("feral pig"), so build field paths with `firestore.FieldPath("tags", name)`, never by string concatenation.
 
 ## `files/{file_id}`: one document per uploaded image or video
@@ -19,14 +19,16 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 | `original_filename` | string | 2 `process_upload` | From the upload's object metadata; display only |
 | `size_bytes` | integer | 2 `process_upload` | |
 | `media_bucket` | string | 2 `process_upload` | |
-| `media_key` | string | 2 `process_upload` | `<file_id>.<ext>` |
+| `media_key` | string | 2 `process_upload` | `<file_id>.<ext>`. Written only after the SHA-256 is verified, so `upload_init` counts a file as a duplicate only when this is set and `status` is `"active"` |
+| `media_uri` | string | 2 `process_upload` | `gs://<media_bucket>/<media_key>`: the original's permanent storage address, which the spec calls its storage URL. Browsers can't open it; sign a URL per response |
 | `thumbnail_key` | string | 2 `process_upload` | `thumbs/<file_id>.jpg` in the derived bucket; videos get a poster thumbnail from their first frame |
+| `thumbnail_uri` | string | 2 `process_upload` | `gs://<project-id>-derived/<thumbnail_key>`, written with `thumbnail_key` |
 | `frame_keys` | array of strings | 2 `process_upload` | Videos only: `frames/<file_id>/<index>.jpg`, one per 10 s |
 | `duration_s` | number | 2 `process_upload` | Videos only |
 | `uploaded_by` | string | 2 `process_upload` | Cognito `sub` of the uploader |
 | `uploaded_at` | timestamp | 2 `process_upload` | |
 | `is_public` | boolean | 2 `process_upload` | Whether the file counts as a public sighting for lost pet search. Default `true` (Proposed) |
-| `status` | `"active"` or `"deleting"` | 2 `process_upload`, `delete_files` | Queries skip `"deleting"` |
+| `status` | `"active"` or `"deleting"` | 2 `process_upload`, `delete_files` | Queries and `upload_init` match only `"active"`. A document tagging wrote before the base record has no `status`, so it never matches |
 | `pipeline.thumbnail` | `"done"` or `"failed"` | 2 `process_upload` | Each pipeline step writes only its own key |
 | `pipeline.frames` | `"done"` or `"failed"` | 2 `process_upload` | Videos only |
 | `pipeline.tagging` | `"done"` or `"failed"` | 3 tagging | |

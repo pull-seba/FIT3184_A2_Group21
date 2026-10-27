@@ -13,7 +13,7 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Merge-only Firestore writes, each function writing its own fields | Several functions write the same record |
 | Video tag counts = maximum in any one frame | Summing counts the same animal once per frame |
 | Thumbnails named by file ID, not by the original's name | Thumbnail lookup works for every format |
-| Store bucket and key, sign URLs per response | Buckets stay private; URLs don't expire in the database |
+| Store bucket, key and `gs://` address; sign URLs per response | Buckets stay private and no stored link expires; the `gs://` addresses (added 27 Oct) give each record the storage URLs the spec asks for |
 | One results gallery, built by member 4 | Avoids three galleries with different behaviour |
 | Member 1 owns the gateway spec and app shell | Avoids merge conflicts on shared files |
 | One shared AWS account and one GCP project, everyone added | AWS Academy lab accounts can't add teammates |

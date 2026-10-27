@@ -50,7 +50,7 @@ docs/                           requirements, contracts, plans
 - Use only names defined in `docs/contracts/` and `shared/tags.json`: Firestore fields, bucket keys, routes, JSON shapes, event payloads, tag names. If something you need isn't defined, stop and say so instead of inventing it.
 - A file's ID is the lowercase hex SHA-256 of its bytes. It is the Firestore document ID and the stem of every storage key for that file.
 - Firestore: write only the fields your function owns (see the schema), with `set(..., merge=True)` or `update()`. Never overwrite a whole document.
-- Store bucket and key, never URLs. Create signed URLs only when building a response.
+- Store bucket, key and the permanent `gs://` address, never a signed URL. Create signed URLs only when building a response.
 - A video's tag counts are the maximum count in any single extracted frame, never the sum.
 - Every HTTP endpoint sits behind API Gateway's Cognito check, and no Cloud Run service allows unauthenticated calls. Read the caller with `ecoguard_common.auth.get_user`.
 - No credentials anywhere in the repo or the frontend bundle: no service account keys, AWS access keys or tokens. Cross-cloud calls use Workload Identity Federation or OIDC tokens.
