@@ -2,6 +2,7 @@
 
 Owner: member N. Rubric: X.Y.Z. Route or trigger: see README.md.
 """
+
 import json
 
 import functions_framework
@@ -28,7 +29,11 @@ def handler(request):
     user = get_user(request)
     if user is None:
         # Cloud Run only accepts the gateway, so this means a misconfigured deploy.
-        return error(401, "unauthenticated", "Request did not come through the API gateway")
+        return error(
+            401,
+            "unauthenticated",
+            "Request did not come through the API gateway",
+        )
 
     body = request.get_json(silent=True)
     if body is None:
