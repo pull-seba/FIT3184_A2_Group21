@@ -1,7 +1,5 @@
 name: Ruff
 
-# Only Python changes trigger it, and the timeout caps a stuck run (default is
-# 6 hours), so it stays well inside GitHub Free's 2,000 private-repo minutes.
 on:
   pull_request:
     paths: ["**.py", "ruff.toml", ".github/workflows/ruff.yml"]
