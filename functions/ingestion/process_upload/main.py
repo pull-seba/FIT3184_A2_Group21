@@ -7,6 +7,7 @@ Owner: member 2. Rubric: 2.1.1 (2.1.2 adds thumbnails and frames here). Trigger:
 Idempotent: Eventarc can deliver the same event twice, so a file that already has its verified record
 is left alone, and deleting an object that's already gone counts as done.
 """
+
 import hashlib
 import json
 import re
@@ -35,7 +36,10 @@ MEDIA_KEY = re.compile(r"([0-9a-f]{64})\.([a-z0-9]+)")  # <file_id>.<ext>
 
 def log(severity: str, message: str, **fields):
     """One JSON line per event, which Cloud Logging parses. Never log signed URLs or tokens."""
-    print(json.dumps({"severity": severity, "message": message, **fields}), flush=True)
+    print(
+        json.dumps({"severity": severity, "message": message, **fields}),
+        flush=True,
+    )
 
 
 def problem_with(name: str, content_type, size: int, metadata: dict):
@@ -43,7 +47,9 @@ def problem_with(name: str, content_type, size: int, metadata: dict):
     key = MEDIA_KEY.fullmatch(name)
     if not key:
         return "bad_key"
-    if content_type not in ACCEPTED or ACCEPTED[content_type][0] != key.group(2):
+    if content_type not in ACCEPTED or ACCEPTED[content_type][0] != key.group(
+        2
+    ):
         return "bad_type"
     # upload_init only saw the size the browser claimed; this is the size actually stored.
     if size > ACCEPTED[content_type][1]:
@@ -77,10 +83,14 @@ def base_record(file_id: str, data: dict) -> dict:
     content_type = data["contentType"]
     return {
         "file_id": file_id,
-        "file_type": content_type.split("/")[0],  # "image" or "video": every accepted type starts with one
+        "file_type": content_type.split("/")[
+            0
+        ],  # "image" or "video": every accepted type starts with one
         "content_type": content_type,
         # upload_init URL-encodes it, since metadata headers must be plain ASCII.
-        "original_filename": urllib.parse.unquote(metadata.get("original-filename", data["name"])),
+        "original_filename": urllib.parse.unquote(
+            metadata.get("original-filename", data["name"])
+        ),
         "size_bytes": int(data["size"]),
         "media_bucket": data["bucket"],
         "media_key": data["name"],
@@ -97,18 +107,31 @@ def base_record(file_id: str, data: dict) -> dict:
 def handler(event):
     data = event.data  # the Cloud Storage object; numbers arrive as strings
     name = data["name"]
-    blob = gcs.bucket(data["bucket"]).blob(name, generation=int(data["generation"]))
+    blob = gcs.bucket(data["bucket"]).blob(
+        name, generation=int(data["generation"])
+    )
     try:
-        reason = problem_with(name, data.get("contentType"), int(data["size"]), data.get("metadata") or {})
+        reason = problem_with(
+            name,
+            data.get("contentType"),
+            int(data["size"]),
+            data.get("metadata") or {},
+        )
         if reason:
             return reject(blob, name, reason)
 
         file_id = MEDIA_KEY.fullmatch(name).group(1)
         doc = db.collection("files").document(file_id)
-        record = doc.get().to_dict() or {}  # tagging may have created the document already
+        record = (
+            doc.get().to_dict() or {}
+        )  # tagging may have created the document already
         if record.get("media_key") and record.get("status") == "active":
             if record["media_key"] == name:
-                log("INFO", "already recorded, repeat event ignored", file_id=file_id)
+                log(
+                    "INFO",
+                    "already recorded, repeat event ignored",
+                    file_id=file_id,
+                )
                 return
             # The same bytes uploaded at the same moment under another type: the record keeps the first.
             return reject(blob, name, "duplicate")
@@ -116,7 +139,11 @@ def handler(event):
         try:
             actual = sha256_of(blob)
         except exceptions.NotFound:
-            log("INFO", "object deleted before it was processed", file_id=file_id)
+            log(
+                "INFO",
+                "object deleted before it was processed",
+                file_id=file_id,
+            )
             return
         if actual != file_id:
             return reject(blob, name, "hash_mismatch")
@@ -125,5 +152,9 @@ def handler(event):
         doc.set(base_record(file_id, data), merge=True)
         log("INFO", "base record written", file_id=file_id)
     except Exception as exc:
-        log("ERROR", f"process_upload failed: {type(exc).__name__}: {exc}", key=name)
+        log(
+            "ERROR",
+            f"process_upload failed: {type(exc).__name__}: {exc}",
+            key=name,
+        )
         raise  # Eventarc retries the event (deployed with --retry); every step above is safe to repeat
