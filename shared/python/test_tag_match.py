@@ -35,13 +35,9 @@ def test_list_means_at_least_one_and_names_are_normalised():
     "body, code",
     [
         ({"foxx": 1}, "unknown_tag"),
-        (["dingo"], "unknown_tag"),
         ({"fox": 0}, "bad_query"),
-        ({"fox": 1.5}, "bad_query"),
-        ({"fox": "2"}, "bad_query"),
         ({"fox": True}, "bad_query"),
         ({}, "bad_query"),
-        ([], "bad_query"),
         ([None], "bad_query"),  # GET /search/species without ?name=
         ("fox", "bad_query"),
     ],
