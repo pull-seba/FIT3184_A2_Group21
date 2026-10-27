@@ -1,4 +1,8 @@
-"""Tests for ecoguard_common.tag_match. Run from the repo root: python -m pytest shared/python"""
+"""Tests for ecoguard_common.tag_match.
+
+Run from the repo root: python -m pytest shared/python
+"""
+
 import pytest
 
 from ecoguard_common.tag_match import QueryError, matches, parse_query
@@ -27,7 +31,8 @@ def test_tags_combine_with_and():
 
 def test_list_means_at_least_one_and_names_are_normalised():
     assert parse_query(["cat"], KNOWN) == {"cat": 1}
-    assert parse_query({" Feral Pig ": 2, "FOX": 1}, KNOWN) == {"feral pig": 2, "fox": 1}
+    query = parse_query({" Feral Pig ": 2, "FOX": 1}, KNOWN)
+    assert query == {"feral pig": 2, "fox": 1}
     assert parse_query({"Fox": 3, "fox": 1}, KNOWN) == {"fox": 3}
 
 
@@ -50,6 +55,7 @@ def test_rejects_bad_queries(body, code):
 
 def test_skips_inactive_untagged_and_empty_queries():
     assert not matches(doc({"fox": 4}, status="deleting"), {"fox": 1})
-    assert not matches({"tags": {"fox": 4}}, {"fox": 1})  # tagging wrote before the upload record
+    # Tagging wrote before the upload record, so there's no status yet.
+    assert not matches({"tags": {"fox": 4}}, {"fox": 1})
     assert not matches({"status": "active"}, {"fox": 1})  # not tagged yet
     assert not matches(doc({"fox": 1}), {})
