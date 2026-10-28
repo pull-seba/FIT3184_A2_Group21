@@ -5,7 +5,6 @@ Owner: member 4. Rubric: 2.2.1. Routes: see README.md.
 """
 
 import json
-import os
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -27,7 +26,7 @@ db = firestore.Client()
 gcs = storage.Client()
 credentials, _ = google.auth.default()
 
-DERIVED_BUCKET = os.environ.get("DERIVED_BUCKET", "ecoguard-g21-derived")
+DERIVED_BUCKET = "ecoguard-g21-derived"
 DOWNLOAD_URL_MINUTES = 60
 KNOWN_TAGS = known_tags()
 # from and to are calendar days in Melbourne, so the chatbot's "yesterday"

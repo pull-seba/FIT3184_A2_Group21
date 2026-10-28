@@ -22,11 +22,6 @@ HTTP through API Gateway: `POST /search/tags` and `GET /search/species` (see `do
 
 Keep this table to what the code actually uses. Member 1 reviews it before Gate 4.
 
-## Configuration
-| Variable | Default |
-| --- | --- |
-| `DERIVED_BUCKET` | `ecoguard-g21-derived` |
-
 ## Test
 ```bash
 python -m pytest
