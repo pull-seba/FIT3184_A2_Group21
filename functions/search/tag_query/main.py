@@ -140,8 +140,7 @@ def file_summary(file_id: str, record: dict) -> dict:
 
 @functions_framework.http
 def handler(request):
-    user = get_user(request)
-    if user is None:
+    if get_user(request) is None:
         # Cloud Run only accepts the gateway, so this means a misconfigured
         # deploy.
         return error(
