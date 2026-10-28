@@ -1,8 +1,24 @@
 """AND and minimum-count tag matching for every search. Owner: member 4."""
 
+import json
+from pathlib import Path
+
 
 class QueryError(ValueError):
     """A tag query the API rejects with 400. Its args are (code, message)."""
+
+
+def known_tags() -> set[str]:
+    """The tag names in shared/tags.json, the team's one tag list.
+
+    Deploy copies tags.json into the function's copy of this package. In the
+    repo, it sits two folders up, in shared/.
+    """
+    here = Path(__file__).parent
+    path = here / "tags.json"
+    if not path.exists():
+        path = here.parent.parent / "tags.json"
+    return {tag["name"] for tag in json.loads(path.read_text())["tags"]}
 
 
 def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:

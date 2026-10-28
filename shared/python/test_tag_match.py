@@ -5,9 +5,18 @@ Run from the repo root: python -m pytest shared/python
 
 import pytest
 
-from ecoguard_common.tag_match import QueryError, matches, parse_query
+from ecoguard_common.tag_match import (
+    QueryError,
+    known_tags,
+    matches,
+    parse_query,
+)
 
 KNOWN = {"fox", "rabbit", "feral pig", "cane toad", "cat", "dog"}
+
+
+def test_known_tags_reads_shared_tags_json():
+    assert "feral pig" in known_tags()
 
 
 def doc(tags, status="active"):
