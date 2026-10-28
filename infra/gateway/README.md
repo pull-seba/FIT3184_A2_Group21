@@ -7,7 +7,7 @@
 | Issuer | `https://cognito-idp.ap-southeast-2.amazonaws.com/ap-southeast-2_weshSSPb9` |
 | Keys (JWKS) | `<issuer>/.well-known/jwks.json` |
 | Audience | `7s4r5iv4324nk32ummfigup6o8` (the `ecoguard-web` app client) |
-| Gateway service account | `api-gateway@ecoguard-g21.iam.gserviceaccount.com`, holding only `roles/run.invoker` on each function |
+| Gateway service account | `ecoguard-gateway@ecoguard-g21.iam.gserviceaccount.com`, holding only `roles/run.invoker` on each function |
 
 ## What each function needs
 - Deploy with `--no-allow-unauthenticated`. Only the gateway's service account may invoke it.
@@ -25,38 +25,47 @@
   ```
 
 ## Deploy
-A person runs these and approves each one. A config can't be edited, so each change gets a new config name (`-v2`, `-v3`, ...) and the gateway is updated to use it.
+Run in Cloud Shell from the folder holding `openapi.yaml`.
 
 ```bash
-PROJECT=ecoguard-g21
-REGION=us-east1
-SA=api-gateway@$PROJECT.iam.gserviceaccount.com
+gcloud config set project ecoguard-g21
 
-# Once: the gateway's own service account, allowed to invoke each function and nothing else.
-gcloud iam service-accounts create api-gateway --project=$PROJECT --display-name="API Gateway"
-for fn in upload-init get-file delete-files tag-query thumbnail-lookup search-by-file lost-pet bulk-tags subscriptions; do
-  gcloud functions add-invoker-policy-binding $fn --project=$PROJECT --region=$REGION --member=serviceAccount:$SA
-done   # skip any function that isn't deployed yet, and run it for that function once it is
+gcloud iam service-accounts create ecoguard-gateway
 
-# Once: the API and the gateway.
-gcloud api-gateway apis create ecoguard-api --project=$PROJECT
-gcloud api-gateway api-configs create ecoguard-config-v1 --project=$PROJECT --api=ecoguard-api \
-  --openapi-spec=infra/gateway/openapi.yaml --backend-auth-service-account=$SA
-gcloud api-gateway gateways create ecoguard-gw --project=$PROJECT --location=$REGION \
-  --api=ecoguard-api --api-config=ecoguard-config-v1
+gcloud api-gateway apis create ecoguard-api
 
-# Every later change to openapi.yaml.
-gcloud api-gateway api-configs create ecoguard-config-v2 --project=$PROJECT --api=ecoguard-api \
-  --openapi-spec=infra/gateway/openapi.yaml --backend-auth-service-account=$SA
-gcloud api-gateway gateways update ecoguard-gw --project=$PROJECT --location=$REGION \
-  --api=ecoguard-api --api-config=ecoguard-config-v2
+gcloud api-gateway api-configs create ecoguard-config-v1 \
+  --api=ecoguard-api \
+  --openapi-spec=openapi.yaml \
+  --backend-auth-service-account=ecoguard-gateway@ecoguard-g21.iam.gserviceaccount.com
 
-# The gateway URL, for API_BASE and the frontend environment.
-gcloud api-gateway gateways describe ecoguard-gw --project=$PROJECT --location=$REGION --format='value(defaultHostname)'
+gcloud api-gateway gateways create ecoguard-gw \
+  --api=ecoguard-api \
+  --api-config=ecoguard-config-v1 \
+  --location=us-east1
+
+gcloud api-gateway gateways describe ecoguard-gw --location=us-east1
+```
+
+Let the gateway call each function once it's deployed (needs Cloud Run Admin):
+
+```bash
+gcloud functions add-invoker-policy-binding tag-query \
+  --region=us-east1 \
+  --member=serviceAccount:ecoguard-gateway@ecoguard-g21.iam.gserviceaccount.com
+```
+
+Configs can't be edited. After changing `openapi.yaml`, create `ecoguard-config-v2` the same way, then:
+
+```bash
+gcloud api-gateway gateways update ecoguard-gw \
+  --api=ecoguard-api \
+  --api-config=ecoguard-config-v2 \
+  --location=us-east1
 ```
 
 ## Check
 ```bash
 API_BASE=https://<defaultHostname> scripts/check-no-token.sh
 ```
-Every route must return `401` without a token and with a bad one. `OPTIONS` isn't checked: it reaches the function, which returns only CORS headers and never reads data.
+Every route should return `401` without a token and with a bad one.
