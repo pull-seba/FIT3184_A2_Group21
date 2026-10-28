@@ -31,7 +31,7 @@ Identity, the chatbot and email run on AWS, using the three services the spec na
 
 ### Upload an image
 1. The browser computes the file's SHA-256 and calls `POST /uploads/init`.
-2. If `files/<sha256>` exists with `media_key` set and `status: "active"`, the response is `duplicate` and nothing else happens. Otherwise it returns a signed PUT URL for `<sha256>.<ext>`.
+2. If `files/<sha256>` is an active record, the response is `duplicate` and nothing else happens. Otherwise it returns a signed PUT URL for `<sha256>.<ext>`.
 3. The browser uploads straight to Cloud Storage with `XMLHttpRequest`, showing progress.
 4. The finalize event starts `process_upload` (2): verify the hash, write the base record, write `thumbs/<sha256>.jpg`, merge `thumbnail_key`.
 5. The same event starts tagging (3): detect, map labels, write `tags`; for cats and dogs, write `sightings`.
