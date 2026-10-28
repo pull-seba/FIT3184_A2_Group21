@@ -14,6 +14,10 @@ html {
       density: 0,
     )
   );
+
+  --eg-foe: #e07a5f;
+  --eg-friend: #5ec2d6;
+  --eg-either: #f2c14e;
 }
 
 .cdk-overlay-dark-backdrop {
@@ -26,4 +30,25 @@ body {
   background: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
   font: var(--mat-sys-body-medium);
+}
+
+app-tag-chips {
+  @include mat.chips-overrides(
+    (
+      container-height: 24px,
+      label-text-size: 12px,
+    )
+  );
+}
+
+@each $group in foe, friend, either {
+  .tag-#{$group} {
+    @include mat.chips-overrides(
+      (
+        outline-color: var(--eg-#{$group}),
+        label-text-color: var(--eg-#{$group}),
+        elevated-container-color: color-mix(in srgb, var(--eg-#{$group}) 14%, transparent),
+      )
+    );
+  }
 }
