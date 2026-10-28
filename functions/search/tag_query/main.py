@@ -5,9 +5,11 @@ Owner: member 4. Rubric: 2.2.1. Routes: see README.md.
 """
 
 import json
+from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+import flask
 import functions_framework
 import google.auth
 from google.auth.transport import requests as google_requests
@@ -58,7 +60,9 @@ def melbourne_midnight(iso_day: str) -> datetime:
     return datetime.combine(day, time(), MELBOURNE)
 
 
-def date_window(args) -> tuple[datetime | None, datetime | None]:
+def date_window(
+    args: Mapping[str, str],
+) -> tuple[datetime | None, datetime | None]:
     start = melbourne_midnight(args["from"]) if "from" in args else None
     end = (
         melbourne_midnight(args["to"]) + timedelta(days=1)
@@ -128,7 +132,7 @@ def file_summary(file_id: str, record: dict) -> dict:
 
 
 @functions_framework.http
-def handler(request):
+def handler(request: flask.Request):
     if get_user(request) is None:
         return error(
             401,
