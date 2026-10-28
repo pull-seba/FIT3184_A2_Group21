@@ -95,16 +95,20 @@ def test_rejects_request_without_gateway_claims():
     assert status == 401
 
 
-def test_rejects_body_that_is_not_json():
-    body, status = call(data="not json")
-    assert status == 400
-    assert body["error"]["code"] == "bad_json"
-
-
-def test_unknown_tag_is_400_before_firestore(clouds):
-    body, status = call(json_body={"foxx": 1})
-    assert status == 400
-    assert body["error"]["code"] == "unknown_tag"
+@pytest.mark.parametrize(
+    "method, path, json_body, data, code",
+    [
+        ("POST", "/search/tags", None, "not json", "bad_json"),
+        ("POST", "/search/tags", {"foxx": 1}, None, "unknown_tag"),
+        ("GET", "/search/species", None, None, "bad_query"),
+        ("POST", "/search/tags?from=yesterday", ["fox"], None, "bad_date"),
+    ],
+)
+def test_bad_input_is_400_before_firestore(
+    clouds, method, path, json_body, data, code
+):
+    body, status = call(method, path, json_body, data)
+    assert (status, body["error"]["code"]) == (400, code)
     clouds.collection.assert_not_called()
 
 
@@ -136,11 +140,6 @@ def test_species_route_means_at_least_one(clouds):
     assert narrowed_by(clouds) == ("tags.cat", ">=", 1)
 
 
-def test_species_route_needs_a_name():
-    _, status = call("GET", "/search/species")
-    assert status == 400
-
-
 @pytest.mark.parametrize(
     "day, expected",
     [("2026-10-27", ["late_27th"]), ("2026-10-28", ["early_28th"])],
@@ -158,12 +157,6 @@ def test_dates_are_melbourne_days(clouds, day, expected):
     )
     body, _ = call(path=f"/search/tags?from={day}&to={day}", json_body=["fox"])
     assert ids(body) == expected
-
-
-def test_bad_date_is_400():
-    body, status = call(path="/search/tags?from=yesterday", json_body=["fox"])
-    assert status == 400
-    assert body["error"]["code"] == "bad_date"
 
 
 def test_results_are_newest_first_with_signed_urls(clouds):
