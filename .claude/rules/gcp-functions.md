@@ -11,7 +11,7 @@ paths:
 - Validate input and return `400` with the error shape from `docs/contracts/api-routes.md` before touching storage or Firestore.
 - Event functions (Eventarc, Pub/Sub) are idempotent: check the current state first and treat "already done" as success.
 - Create Firestore and Storage clients once at module level; keep per-request state in local variables.
-- Build tag field paths with `firestore.FieldPath("tags", name)`: tag names can contain spaces.
+- Build tag field paths with `firestore.Client.field_path("tags", name)`: tag names can contain spaces, and it quotes them (``tags.`feral pig` ``). `google.cloud.firestore` has no `FieldPath`.
 - Sign URLs without key files: refresh the default credentials and pass `service_account_email` and `access_token` to `blob.generate_signed_url(version="v4", ...)`. The function's service account needs Service Account Token Creator on itself.
 - Log JSON lines that include `file_id`. Never log tokens, signed URLs or image bytes.
 - Tests mock every cloud client. No test touches the shared project.
