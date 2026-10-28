@@ -41,8 +41,9 @@ python -m pytest
 ```
 
 ## Deploy (a person runs this)
-Cloud Functions gen2 names allow only lowercase letters, digits and hyphens, so the function is `process-upload`. It doesn't use `ecoguard_common`, so there's nothing to copy first.
+Cloud Functions gen2 names allow only lowercase letters, digits and hyphens, so the function is `process-upload`.
 ```bash
+cp -r ../../../shared/python/ecoguard_common .   # gitignored copy of the shared package
 gcloud functions deploy process-upload \
   --gen2 --runtime=python312 --region=us-east1 \
   --source=. --entry-point=handler \
