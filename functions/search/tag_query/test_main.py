@@ -1,5 +1,3 @@
-"""Tests mock every cloud client; nothing here touches the shared project."""
-
 import base64
 import json
 from datetime import datetime, timedelta, timezone
@@ -24,7 +22,6 @@ UPLOADED = datetime(2026, 10, 26, 9, 43, tzinfo=timezone.utc)
 
 
 def gateway_headers(sub="test-user", email="test@example.com"):
-    """What API Gateway adds after it verifies a Cognito ID token."""
     raw = json.dumps({"sub": sub, "email": email}).encode()
     return {
         "X-Apigateway-Api-Userinfo": base64.urlsafe_b64encode(raw)
@@ -59,7 +56,6 @@ def record(tags, uploaded_at=UPLOADED, status="active"):
 
 @pytest.fixture(autouse=True)
 def clouds(monkeypatch):
-    """Fresh fakes for every test: every signed URL is a fixed string."""
     db, gcs = mock.Mock(), mock.Mock()
     gcs.bucket.return_value.blob.return_value.generate_signed_url.return_value = SIGNED
     monkeypatch.setattr(main, "db", db)
@@ -72,18 +68,16 @@ def clouds(monkeypatch):
     return db
 
 
-def stored(db, **records):
-    """What Firestore returns for the one-tag query, keyed by file ID."""
+def firestore_returns(db, **records_by_id):
     db.collection.return_value.where.return_value.stream.return_value = [
         mock.Mock(id=file_id, **{"to_dict.return_value": data})
-        for file_id, data in records.items()
+        for file_id, data in records_by_id.items()
     ]
 
 
 def narrowed_by(db):
-    """(field, operator, value) of the filter tag_query sent to Firestore."""
-    found = db.collection.return_value.where.call_args.kwargs["filter"]
-    return found.field_path, found.op_string, found.value
+    sent = db.collection.return_value.where.call_args.kwargs["filter"]
+    return sent.field_path, sent.op_string, sent.value
 
 
 def ids(body):
@@ -113,19 +107,16 @@ def test_bad_input_is_400_before_firestore(
 
 
 def test_tags_combine_with_and_and_counts_are_minimums(clouds):
-    # Candidates Firestore returns after narrowing by one tag. Only "both"
-    # meets every minimum, so OR or ignored counts would return more files.
-    stored(
+    firestore_returns(
         clouds,
-        both=record({"feral pig": 1, "cane toad": 3}),
+        meets_both=record({"feral pig": 1, "cane toad": 3}),
         pig_only=record({"feral pig": 2}),
-        few_toads=record({"feral pig": 1, "cane toad": 2}),
+        too_few_toads=record({"feral pig": 1, "cane toad": 2}),
         deleting=record({"feral pig": 1, "cane toad": 3}, status="deleting"),
     )
     body, status = call(json_body={"feral pig": 1, "cane toad": 3})
     assert status == 200
-    assert ids(body) == ["both"]
-    # Either tag narrows correctly; names with spaces must be quoted.
+    assert ids(body) == ["meets_both"]
     assert narrowed_by(clouds) in {
         ("tags.`feral pig`", ">=", 1),
         ("tags.`cane toad`", ">=", 3),
@@ -133,7 +124,7 @@ def test_tags_combine_with_and_and_counts_are_minimums(clouds):
 
 
 def test_species_route_means_at_least_one(clouds):
-    stored(clouds, cat=record({"cat": 1}))
+    firestore_returns(clouds, cat=record({"cat": 1}))
     body, status = call("GET", "/search/species?name=%20Cat")
     assert status == 200
     assert ids(body) == ["cat"]
@@ -145,14 +136,13 @@ def test_species_route_means_at_least_one(clouds):
     [("2026-10-27", ["late_27th"]), ("2026-10-28", ["early_28th"])],
 )
 def test_dates_are_melbourne_days(clouds, day, expected):
-    # Melbourne is UTC+11 in late October.
-    stored(
+    firestore_returns(
         clouds,
         late_27th=record(
-            {"fox": 1}, datetime(2026, 10, 27, 12, 30, tzinfo=timezone.utc)
+            {"fox": 1}, datetime(2026, 10, 27, 23, 30, tzinfo=main.MELBOURNE)
         ),
         early_28th=record(
-            {"fox": 1}, datetime(2026, 10, 27, 13, 30, tzinfo=timezone.utc)
+            {"fox": 1}, datetime(2026, 10, 28, 0, 30, tzinfo=main.MELBOURNE)
         ),
     )
     body, _ = call(path=f"/search/tags?from={day}&to={day}", json_body=["fox"])
@@ -160,7 +150,7 @@ def test_dates_are_melbourne_days(clouds, day, expected):
 
 
 def test_results_are_newest_first_with_signed_urls(clouds):
-    stored(
+    firestore_returns(
         clouds,
         older=record({"fox": 1}),
         newer=record({"fox": 1}, UPLOADED + timedelta(days=1)),
