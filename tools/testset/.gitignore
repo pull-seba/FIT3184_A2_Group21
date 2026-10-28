@@ -1,0 +1,7 @@
+# Test set (member 3). Only the labels (data/ground_truth.csv) are committed.
+# Images stay on the labeller's machine: ~66 MB, mostly CC-BY-NC, rebuildable
+# from the source URLs in ground_truth.csv.
+data/images/
+data/review.html
+data/*.backup.csv
+data/ai_review_*

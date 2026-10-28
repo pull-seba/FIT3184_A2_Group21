@@ -1,0 +1,10 @@
+@if (auth.user(); as user) {
+  <header class="topbar">
+    <a routerLink="/" class="brand">Aussie EcoGuard</a>
+    <span>
+      {{ user.given_name }} {{ user.family_name }}
+      <button type="button" (click)="signOut()">Sign out</button>
+    </span>
+  </header>
+}
+<router-outlet />

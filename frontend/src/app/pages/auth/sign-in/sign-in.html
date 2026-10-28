@@ -1,0 +1,32 @@
+<main class="card">
+  <h1>Aussie EcoGuard</h1>
+  @if (form.message(); as message) {
+    <p class="message" [class]="message.type" role="status">{{ message.text }}</p>
+  }
+
+  @if (step() === 'sign-in') {
+    <h2>Sign in</h2>
+    <form (submit)="form.submit($event, signIn)">
+      <label>Email <input name="email" type="email" required autocomplete="username" /></label>
+      <label>Password <input name="password" type="password" required autocomplete="current-password" /></label>
+      <button type="submit" [disabled]="form.busy()">Sign in</button>
+    </form>
+    <p><a routerLink="/forgot-password">Forgot password?</a></p>
+    <p>New here? <a routerLink="/sign-up">Create an account</a></p>
+  } @else {
+    <h2>Choose a new password</h2>
+    <p>You signed in with a temporary password. Set your own password to continue.</p>
+    <form (submit)="form.submit($event, setNewPassword)">
+      @if (needs('given_name')) {
+        <label>First name <input name="given_name" required autocomplete="given-name" /></label>
+      }
+      @if (needs('family_name')) {
+        <label>Last name <input name="family_name" required autocomplete="family-name" /></label>
+      }
+      <label>New password <input name="password" type="password" required minlength="8" autocomplete="new-password" /></label>
+      <small>At least 8 characters with upper case, lower case and a number.</small>
+      <label>Confirm new password <input name="confirm" type="password" required autocomplete="new-password" /></label>
+      <button type="submit" [disabled]="form.busy()">Set password</button>
+    </form>
+  }
+</main>

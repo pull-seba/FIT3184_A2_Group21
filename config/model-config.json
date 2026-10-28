@@ -1,6 +1,0 @@
-{
-  "provider": "rekognition",
-  "model_version": "latest",
-  "min_confidence": 70,
-  "max_labels": 50
-}
