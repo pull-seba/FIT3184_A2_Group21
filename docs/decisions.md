@@ -18,6 +18,11 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Member 1 owns the gateway spec and app shell | Avoids merge conflicts on shared files |
 | One shared AWS account and one GCP project, everyone added | AWS Academy lab accounts can't add teammates |
 | Feature freeze at the end of Sat 31 Oct | Leaves two days for the demo checklist and reports |
+| Tag list confirmed: the six starter tags, unchanged (28 Oct) | Member 4's queries and Lex slots already use them |
+| `model_label_map` holds Rekognition's real label names, matched case-insensitively (28 Oct) | From a 30-image pilot in `tools/testset`. Frog, Amphibian, Hare, Canine, Coyote and Wolf are left out because they also fire on tree frogs, hares and foxes vs dogs |
+| Frames handed to tagging through the `frames-ready` topic (28 Oct) | Settles the frame handoff crossover; tagging keeps each tag's highest count in any one frame |
+| Keep frames until the file is deleted (28 Oct) | Replaces "frames deleted after tagging"; the demo can show 1 frame per 10 s, and delete removes them with the file |
+| One `sightings` document per detected cat or dog (28 Oct) | Firestore vector search needs one vector per document |
 
 ## Proposed (confirm by the date shown)
 
@@ -27,11 +32,8 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Frontend in Angular 21 (LTS) and TypeScript on Firebase Hosting | 1 | Mon 26 Oct | Firebase Hosting gives HTTPS, which Cognito callback URLs need. Member 4 proposed Angular instead of React and Vite on 27 Oct; member 1 to confirm |
 | Regions GCP `australia-southeast1`, AWS `ap-southeast-2` | 1 | Mon 26 Oct | Both Sydney |
 | Separate media and derived buckets | 2 | Mon 26 Oct | Storage triggers can't filter by prefix |
-| Frames handed to tagging through the `frames-ready` topic | 2, 3 | Mon 26 Oct | Settles the frame handoff crossover |
-| Keep frames until the file is deleted | 2, 3 | Mon 26 Oct | Changes the crossover agreement "frames deleted after tagging"; keeping them lets the demo show 1 frame per 10 s |
 | Accepted types and size limits in `storage-layout.md` | 2 | Tue 27 Oct | |
 | `is_public` defaults to `true`, with a checkbox on the upload page | 2 | Tue 27 Oct | Lost pet search covers public sightings only |
-| One `sightings` document per detected cat or dog | 3 | Tue 27 Oct | Firestore vector search needs one vector per document |
 | Shared code copied into each function folder before deploy | 2 | Tue 27 Oct | `gcloud` uploads only the function's folder |
 
 ## Open

@@ -14,7 +14,7 @@ Every handler here is idempotent: Eventarc and Pub/Sub deliver at least once, so
 
 ## Pub/Sub topics
 
-### `frames-ready` (Proposed)
+### `frames-ready`
 Publisher: 2 `process_upload`. Subscriber: 3 tagging.
 ```json
 { "file_id": "<64 hex>", "bucket": "<project-id>-derived", "frame_keys": ["frames/<file_id>/0000.jpg", "frames/<file_id>/0001.jpg"], "duration_s": 14.2 }

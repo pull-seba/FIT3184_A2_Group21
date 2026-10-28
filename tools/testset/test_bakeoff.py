@@ -72,7 +72,7 @@ class BakeoffTests(unittest.TestCase):
             bakeoff.predict(rec, self.label_map, {}, 50), {"fox": 2}
         )
         self.assertEqual(
-            bakeoff.predict(rec, self.label_map, {}, 70), {"fox": 1}
+            bakeoff.predict(rec, self.label_map, {}, 70), {"fox": 2}
         )
         self.assertEqual(bakeoff.predict(rec, self.label_map, {}, 95), {})
 
@@ -106,6 +106,89 @@ class BakeoffTests(unittest.TestCase):
             results = list(csv.DictReader(f))
         fox = results[0]
         self.assertEqual((fox["hit"], fox["count_ok"]), ("True", "True"))
+
+    def test_borrow_counts_boxes_from_wrongly_named_animal(self):
+        toads = {
+            "labels": [
+                {
+                    "name": "Toad",
+                    "confidence": 93,
+                    "instances": [],
+                    "parents": ["Amphibian", "Animal"],
+                },
+                {
+                    "name": "Lizard",
+                    "confidence": 99,
+                    "instances": [97, 90, 88],
+                    "parents": ["Animal", "Reptile"],
+                },
+                {
+                    "name": "Plant",
+                    "confidence": 66,
+                    "instances": [70, 60],
+                    "parents": [],
+                },
+            ]
+        }
+        label_map = {"toad": "cane toad"}
+        self.assertEqual(
+            bakeoff.predict(toads, label_map, {}, 60), {"cane toad": 1}
+        )
+        self.assertEqual(
+            bakeoff.predict(toads, label_map, {}, 60, borrow=True),
+            {"cane toad": 3},  # Lizard boxes, not the Plant ones
+        )
+
+    def test_borrow_skips_boxes_a_predicted_tag_already_uses(self):
+        rec = {
+            "labels": [
+                {
+                    "name": "Fox",
+                    "confidence": 98,
+                    "instances": [],
+                    "parents": ["Animal", "Mammal"],
+                },
+                {
+                    "name": "Dog",
+                    "confidence": 97,
+                    "instances": [95, 94],
+                    "parents": ["Animal", "Canine"],
+                },
+            ]
+        }
+        label_map = {"fox": "fox", "dog": "dog"}
+        # Dog is predicted too, so its boxes stay with dog.
+        self.assertEqual(
+            bakeoff.predict(rec, label_map, {}, 90, borrow=True),
+            {"fox": 1, "dog": 2},
+        )
+        # With a dog threshold above 97, the Dog boxes are free to borrow.
+        self.assertEqual(
+            bakeoff.predict(rec, label_map, {"dog": 99}, 90, borrow=True),
+            {"fox": 2},
+        )
+
+    def test_own_boxes_beat_borrowed(self):
+        rec = {
+            "labels": [
+                {
+                    "name": "Pig",
+                    "confidence": 99,
+                    "instances": [99, 98],
+                    "parents": ["Animal", "Mammal"],
+                },
+                {
+                    "name": "Bear",
+                    "confidence": 96,
+                    "instances": [90, 90, 90],
+                    "parents": ["Animal", "Mammal"],
+                },
+            ]
+        }
+        self.assertEqual(
+            bakeoff.predict(rec, {"pig": "feral pig"}, {}, 60, borrow=True),
+            {"feral pig": 2},
+        )
 
 
 if __name__ == "__main__":

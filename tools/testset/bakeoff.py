@@ -35,6 +35,7 @@ MAX_BYTES = 5 * 1024 * 1024  # Rekognition's limit for image bytes
 RECORD_MIN_CONFIDENCE = 50  # keep everything >= 50 so thresholds can be swept
 THRESHOLDS = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
 FALLBACK_LABELS = ["Frog", "Amphibian", "Hare", "Canine"]
+BOX_MIN = 50  # min box confidence; a box counts once its label passes
 # Likely Rekognition names for our tags; the pilot shows which really appear.
 CANDIDATES = {
     "fox": "fox",
@@ -249,9 +250,18 @@ def pilot_report(rows, cache, label_map, fallback):
 # ---------- scoring ----------
 
 
-def predict(record, label_map, thresholds, default_threshold):
-    """Returns ({tag: count}, sent_to_fallback) for one image."""
+def predict(record, label_map, thresholds, default_threshold, borrow=False):
+    """Returns {tag: count} for one image.
+
+    Count = boxes Rekognition drew on the tag's own labels (box confidence
+    at least BOX_MIN, once the label itself passes the tag's threshold),
+    else 1. With borrow=True, a tag with no boxes of its own
+    takes the largest box count on any other animal label in the image whose
+    boxes no predicted tag is already using - Rekognition often boxes the
+    right animal under the wrong name ("Lizard" on toads, "Dog" on a fox).
+    """
     tags = {}
+    own_boxes = {}
     for label in record["labels"]:
         tag = label_map.get(label["name"].lower())
         if not tag:
@@ -259,8 +269,22 @@ def predict(record, label_map, thresholds, default_threshold):
         threshold = thresholds.get(tag, default_threshold)
         if label["confidence"] < threshold:
             continue
-        boxes = sum(1 for c in label["instances"] if c >= threshold)
+        boxes = sum(1 for c in label["instances"] if c >= BOX_MIN)
         tags[tag] = max(tags.get(tag, 0), boxes or 1)
+        own_boxes[tag] = max(own_boxes.get(tag, 0), boxes)
+    if borrow:
+        spare = max(
+            (
+                sum(1 for c in label["instances"] if c >= BOX_MIN)
+                for label in record["labels"]
+                if "Animal" in label.get("parents", [])
+                and label_map.get(label["name"].lower()) not in tags
+            ),
+            default=0,
+        )
+        for tag in tags:
+            if not own_boxes[tag] and spare:
+                tags[tag] = spare
     return tags
 
 
@@ -272,19 +296,25 @@ def to_fallback(record, tags, fallback, threshold=RECORD_MIN_CONFIDENCE):
     )
 
 
-def evaluate(rows, cache, label_map, thresholds, default_threshold):
+def evaluate(
+    rows, cache, label_map, thresholds, default_threshold, borrow=False
+):
     out = []
     for row in rows:
         rec = cache[row["filename"]]
-        tags = predict(rec, label_map, thresholds, default_threshold)
+        tags = predict(rec, label_map, thresholds, default_threshold, borrow)
         truth = row["species"]
         hit = truth != "none" and truth in tags
+        true_count = int(row["true_count"] or 0)
+        pred = tags.get(truth, 0) if hit else 0
         out.append(
             {
                 "row": row,
                 "tags": tags,
                 "hit": hit,
-                "count_ok": hit and tags[truth] == int(row["true_count"]),
+                "true_count": true_count,
+                "pred_count": pred,
+                "count_ok": hit and pred == true_count,
                 "false_tags": [t for t in tags if t != truth],
             }
         )
@@ -395,6 +425,42 @@ def score_report(rows, cache, label_map, fallback, max_false, data_dir):
             + ", ".join(f"{x['name']} {x['confidence']:.0f}" for x in top)
         )
 
+    borrowed = evaluate(rows, cache, label_map, best, THRESHOLDS[-1], True)
+    lines += [
+        "",
+        "## Counting: own boxes vs borrowed boxes",
+        "",
+        'Search counts are minimums: `{"fox": 2}` matches any photo tagged '
+        "fox with count 2 or more. *Finds 2+* = photos with 2+ animals where "
+        "that query would match. *Over* = count above the truth (it would "
+        "match queries it shouldn't).",
+        "",
+        "| Tag | Photos with 2+ | Own: exact | Own: finds 2+ | Borrowed: exact "
+        "| Borrowed: finds 2+ | Over, all photos (own / borrowed) |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for tag in sorted(best):
+        own = [r for r in results if r["row"]["species"] == tag]
+        bor = [r for r in borrowed if r["row"]["species"] == tag]
+        own_multi = [r for r in own if r["true_count"] >= 2]
+        bor_multi = [r for r in bor if r["true_count"] >= 2]
+        lines.append(
+            f"| {tag} | {len(own_multi)} | "
+            f"{pct(sum(r['count_ok'] for r in own_multi), len(own_multi))} | "
+            f"{pct(sum(r['pred_count'] >= 2 for r in own_multi), len(own_multi))} | "
+            f"{pct(sum(r['count_ok'] for r in bor_multi), len(bor_multi))} | "
+            f"{pct(sum(r['pred_count'] >= 2 for r in bor_multi), len(bor_multi))} | "
+            f"{sum(r['pred_count'] > r['true_count'] for r in own)} / "
+            f"{sum(r['pred_count'] > r['true_count'] for r in bor)} |"
+        )
+    lines += ["", "Photos with 2+ animals (true / own / borrowed):", ""]
+    for o, b in zip(results, borrowed):
+        if o["row"]["species"] != "none" and o["true_count"] >= 2:
+            lines.append(
+                f"- {o['row']['filename']}: {o['true_count']} / "
+                f"{o['pred_count']} / {b['pred_count']}"
+            )
+
     summary = data_dir / "bakeoff_summary.md"
     summary.write_text("\n".join(lines) + "\n", encoding="utf-8")
     with (data_dir / "bakeoff_results.csv").open(
@@ -410,12 +476,14 @@ def score_report(rows, cache, label_map, fallback, max_false, data_dir):
                 "predicted",
                 "hit",
                 "count_ok",
+                "count_own",
+                "count_borrowed",
                 "false_tags",
                 "to_fallback",
                 "top_labels",
             ]
         )
-        for r in results:
+        for r, b in zip(results, borrowed):
             rec = cache[r["row"]["filename"]]
             top = sorted(rec["labels"], key=lambda x: -x["confidence"])[:5]
             w.writerow(
@@ -427,6 +495,8 @@ def score_report(rows, cache, label_map, fallback, max_false, data_dir):
                     ";".join(f"{t}:{c}" for t, c in r["tags"].items()),
                     r["hit"],
                     r["count_ok"],
+                    r["pred_count"],
+                    b["pred_count"],
                     ";".join(r["false_tags"]),
                     to_fallback(rec, r["tags"], fallback),
                     "; ".join(
