@@ -2,5 +2,3 @@ functions-framework==3.*
 google-cloud-firestore==2.*
 google-cloud-storage==3.*
 google-auth==2.*
-# zoneinfo's fallback, in case the runtime image has no time zone files
-tzdata
