@@ -1,17 +1,22 @@
 """AND and minimum-count tag matching for every search. Owner: member 4."""
 
+import json
+from pathlib import Path
+
 
 class QueryError(ValueError):
     """A tag query the API rejects with 400. Its args are (code, message)."""
 
 
-def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:
-    """Turn a request body into {tag: minimum count}, or raise QueryError.
+def known_tags() -> set[str]:
+    package_dir = Path(__file__).parent
+    deployed_copy = package_dir / "tags.json"
+    repo_copy = package_dir.parent.parent / "tags.json"
+    path = deployed_copy if deployed_copy.exists() else repo_copy
+    return {tag["name"] for tag in json.loads(path.read_text())["tags"]}
 
-    Accepts {"fox": 2} or a list of names, where ["cat"] means {"cat": 1}.
-    Names are trimmed and lowercased, then checked against known_tags (the
-    tag names in shared/tags.json).
-    """
+
+def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:
     if isinstance(body, list):
         if not all(isinstance(name, str) for name in body):
             raise QueryError("bad_query", "Tag names must be strings")
@@ -41,13 +46,8 @@ def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:
 
 
 def matches(doc: dict, query: dict[str, int]) -> bool:
-    """True if a `files` document meets every tag's minimum count (AND).
-
-    Only "active" files match: not files being deleted, and not documents
-    tagging wrote before the upload record existed. An empty query matches
-    nothing, so a search-by-file photo with no animals in it finds no files
-    instead of every file.
-    """
+    # Documents tagging wrote before the upload record have no status, and
+    # all() would match every file for an empty query.
     if not query or doc.get("status") != "active":
         return False
     tags = doc.get("tags") or {}
