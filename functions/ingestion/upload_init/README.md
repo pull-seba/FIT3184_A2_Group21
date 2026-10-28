@@ -21,12 +21,6 @@ HTTP through API Gateway: `POST /uploads/init` (see `docs/contracts/api-routes.m
 
 Keep this table to what the code actually uses. Member 1 reviews it before Gate 4.
 
-## Configuration
-| Variable | Default |
-| --- | --- |
-| `MEDIA_BUCKET` | `ecoguard-g21-media` |
-| `DERIVED_BUCKET` | `ecoguard-g21-derived` |
-
 ## Test
 ```bash
 python -m pytest
