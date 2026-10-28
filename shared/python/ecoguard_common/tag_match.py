@@ -9,25 +9,14 @@ class QueryError(ValueError):
 
 
 def known_tags() -> set[str]:
-    """The tag names in shared/tags.json, the team's one tag list.
-
-    Deploy copies tags.json into the function's copy of this package. In the
-    repo, it sits two folders up, in shared/.
-    """
-    here = Path(__file__).parent
-    path = here / "tags.json"
-    if not path.exists():
-        path = here.parent.parent / "tags.json"
+    package_dir = Path(__file__).parent
+    deployed_copy = package_dir / "tags.json"
+    repo_copy = package_dir.parent.parent / "tags.json"
+    path = deployed_copy if deployed_copy.exists() else repo_copy
     return {tag["name"] for tag in json.loads(path.read_text())["tags"]}
 
 
 def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:
-    """Turn a request body into {tag: minimum count}, or raise QueryError.
-
-    Accepts {"fox": 2} or a list of names, where ["cat"] means {"cat": 1}.
-    Names are trimmed and lowercased, then checked against known_tags (the
-    tag names in shared/tags.json).
-    """
     if isinstance(body, list):
         if not all(isinstance(name, str) for name in body):
             raise QueryError("bad_query", "Tag names must be strings")
@@ -57,13 +46,8 @@ def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:
 
 
 def matches(doc: dict, query: dict[str, int]) -> bool:
-    """True if a `files` document meets every tag's minimum count (AND).
-
-    Only "active" files match: not files being deleted, and not documents
-    tagging wrote before the upload record existed. An empty query matches
-    nothing, so a search-by-file photo with no animals in it finds no files
-    instead of every file.
-    """
+    # Documents tagging wrote before the upload record have no status, and
+    # all() would match every file for an empty query.
     if not query or doc.get("status") != "active":
         return False
     tags = doc.get("tags") or {}

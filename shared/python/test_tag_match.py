@@ -52,7 +52,7 @@ def test_list_means_at_least_one_and_names_are_normalised():
         ({"fox": 0}, "bad_query"),
         ({"fox": True}, "bad_query"),
         ({}, "bad_query"),
-        ([None], "bad_query"),  # GET /search/species without ?name=
+        ([None], "bad_query"),
         ("fox", "bad_query"),
     ],
 )
@@ -63,8 +63,9 @@ def test_rejects_bad_queries(body, code):
 
 
 def test_skips_inactive_untagged_and_empty_queries():
-    assert not matches(doc({"fox": 4}, status="deleting"), {"fox": 1})
-    # Tagging wrote before the upload record, so there's no status yet.
-    assert not matches({"tags": {"fox": 4}}, {"fox": 1})
-    assert not matches({"status": "active"}, {"fox": 1})  # not tagged yet
+    deleting = doc({"fox": 4}, status="deleting")
+    tagged_before_upload_record = {"tags": {"fox": 4}}
+    untagged = {"status": "active"}
+    for skipped in (deleting, tagged_before_upload_record, untagged):
+        assert not matches(skipped, {"fox": 1})
     assert not matches(doc({"fox": 1}), {})
