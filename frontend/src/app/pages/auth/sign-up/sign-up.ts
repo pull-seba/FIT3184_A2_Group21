@@ -15,6 +15,9 @@ export class SignUp {
   readonly form = new FormState();
   // The address waiting for its code; set means the page shows the verify step.
   readonly email = signal('');
+  // Kept in memory only, so the user is signed in straight after verifying. Lost on reload,
+  // and empty when sign-in sent the user here, so those cases fall back to the sign-in page.
+  private password = '';
 
   constructor() {
     // Sign-in sends unverified users here with ?verify=<email>.
@@ -24,14 +27,22 @@ export class SignUp {
   signUp = async (data: FormData) => {
     passwordsMatch(data);
     const email = field(data, 'email');
-    await this.auth.signUp(email, String(data.get('password')), field(data, 'firstName'), field(data, 'lastName'));
+    const password = String(data.get('password'));
+    await this.auth.signUp(email, password, field(data, 'firstName'), field(data, 'lastName'));
+    this.password = password;
     this.email.set(email);
     this.form.success('Account created. Check your email for the verification code.');
   };
 
   verify = async (data: FormData) => {
     await this.auth.confirmSignUp(this.email(), field(data, 'code'));
-    await this.router.navigate(['/sign-in'], { queryParams: { verified: 1 } });
+    if (!this.password) {
+      await this.router.navigate(['/sign-in'], { queryParams: { verified: 1 } });
+      return;
+    }
+    await this.auth.signIn(this.email(), this.password);
+    this.password = '';
+    await this.router.navigateByUrl('/');
   };
 
   async resend(): Promise<void> {

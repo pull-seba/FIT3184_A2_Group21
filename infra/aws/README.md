@@ -17,7 +17,7 @@ Run `cd frontend && npm start` and open http://localhost:5173.
 
 | Flow | Steps |
 |---|---|
-| Sign up | `/sign-up`: first name, last name, email, password, then the code Cognito emails. You're sent to sign-in |
+| Sign up | `/sign-up`: first name, last name, email, password, then the code Cognito emails. You're signed in and taken to the home page |
 | Sign in and out | `/sign-in`: the top bar shows your name. **Sign out** revokes the tokens and returns to sign-in |
 | Temporary password | Create a user with the command below, then sign in with the emailed temporary password: you're asked to choose a new one |
 | Forgot password | `/sign-in`, **Forgot password?**, then the emailed code and a new password |
