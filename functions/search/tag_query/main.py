@@ -165,8 +165,7 @@ def handler(request):
         query = parse_query(body, KNOWN_TAGS)
         start, end = date_window(request.args)
     except QueryError as exc:
-        code, message = exc.args
-        return error(400, code, message)
+        return error(400, *exc.args)
 
     try:
         found = search(query, start, end)
