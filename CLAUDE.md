@@ -40,7 +40,7 @@ infra/
   gcp/                          buckets, service accounts, Firestore indexes: owner of each resource
 shared/
   tags.json                     tag vocabulary and model label map: 3
-  python/ecoguard_common/       auth.py: 1 · urls.py: 2 · tag_match.py: 4
+  python/ecoguard_common/       auth.py: 1 · urls.py, uploads.py, logs.py: 2 · tag_match.py: 4
 scripts/                        seed_data.py: 2 · check-no-token.sh
 tests/                          cross-member checks for the gates
 docs/                           requirements, contracts, plans

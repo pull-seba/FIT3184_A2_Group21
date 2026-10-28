@@ -61,26 +61,34 @@ def fake_generate_signed_url(**kwargs):
 
 
 @pytest.fixture(autouse=True)
-def clouds(monkeypatch):
-    """Fresh fakes for every test: Firestore has no record and every signed URL is a fixed string."""
-    db, gcs = mock.Mock(), mock.Mock()
+def db(monkeypatch):
+    """A fresh Firestore fake for every test, holding no record."""
+    db = mock.Mock()
     db.collection.return_value.document.return_value.get.return_value = (
-        mock.Mock(exists=False)
+        mock.Mock(to_dict=lambda: None)
     )
-    gcs.bucket.return_value.blob.return_value.generate_signed_url.side_effect = fake_generate_signed_url
     monkeypatch.setattr(main, "db", db)
+    return db
+
+
+@pytest.fixture(autouse=True)
+def gcs(monkeypatch):
+    """A fresh Storage fake for every test: every signed URL is a fixed string."""
+    gcs = mock.Mock()
+    blob = gcs.bucket.return_value.blob.return_value
+    blob.generate_signed_url.side_effect = fake_generate_signed_url
     monkeypatch.setattr(main, "gcs", gcs)
     monkeypatch.setattr(
         main,
         "credentials",
         mock.Mock(valid=True, service_account_email=SIGNER, token="tok"),
     )
-    return db, gcs
+    return gcs
 
 
 def stored_record(db, data):
     db.collection.return_value.document.return_value.get.return_value = (
-        mock.Mock(exists=True, to_dict=lambda: data)
+        mock.Mock(to_dict=lambda: data)
     )
 
 
@@ -121,10 +129,10 @@ def test_rejects_body_that_is_not_json():
 @pytest.mark.parametrize(
     "sha256", [SHA[:-1], SHA.upper(), "z" * 64, 12345, None]
 )
-def test_rejects_bad_hash(sha256, clouds):
+def test_rejects_bad_hash(sha256, db):
     body, status = call(init_body(sha256=sha256), headers=gateway_headers())
     assert status == 400 and body["error"]["code"] == "bad_hash"
-    clouds[0].collection.assert_not_called()
+    db.collection.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -172,7 +180,7 @@ def test_rejects_is_public_that_is_not_boolean():
 # ---- New files get a signed PUT URL ----
 
 
-def test_new_file_gets_signed_put_url_with_contract_headers(clouds):
+def test_new_file_gets_signed_put_url_with_contract_headers(gcs):
     body, status = call(
         init_body(), headers=gateway_headers(sub="cognito-sub-1")
     )
@@ -196,7 +204,7 @@ def test_new_file_gets_signed_put_url_with_contract_headers(clouds):
         <= timedelta(minutes=15)
     )
 
-    [(bucket, key, kwargs)] = signing_calls(clouds[1])
+    [(bucket, key, kwargs)] = signing_calls(gcs)
     assert (bucket, key) == ("ecoguard-g21-media", f"{SHA}.jpg")
     assert kwargs["version"] == "v4" and kwargs["method"] == "PUT"
     assert kwargs["expiration"] == timedelta(minutes=15)
@@ -256,17 +264,17 @@ def test_is_public_defaults_to_true():
     ],
 )
 def test_key_extension_follows_content_type_not_filename(
-    content_type, ext, clouds
+    content_type, ext, gcs
 ):
     call(
         init_body(content_type=content_type, filename="looks-like.jpg"),
         headers=gateway_headers(),
     )
-    [(_, key, _)] = signing_calls(clouds[1])
+    [(_, key, _)] = signing_calls(gcs)
     assert key == f"{SHA}.{ext}"
 
 
-def test_refreshes_credentials_before_signing(clouds, monkeypatch):
+def test_refreshes_credentials_before_signing(monkeypatch):
     stale = mock.Mock(valid=False, service_account_email=SIGNER, token="tok")
     monkeypatch.setattr(main, "credentials", stale)
     call(init_body(), headers=gateway_headers())
@@ -276,8 +284,8 @@ def test_refreshes_credentials_before_signing(clouds, monkeypatch):
 # ---- Duplicates ----
 
 
-def test_verified_active_record_is_a_duplicate(clouds):
-    stored_record(clouds[0], {**VERIFIED, "thumbnail_key": f"thumbs/{SHA}.jpg"})
+def test_verified_active_record_is_a_duplicate(db, gcs):
+    stored_record(db, {**VERIFIED, "thumbnail_key": f"thumbs/{SHA}.jpg"})
     body, status = call(
         init_body(filename="renamed.jpg"), headers=gateway_headers()
     )
@@ -291,10 +299,10 @@ def test_verified_active_record_is_a_duplicate(clouds):
         "tags": {"fox": 2},
         "uploaded_at": "2026-10-26T09:43:00Z",
     }
-    clouds[0].collection.assert_called_with("files")
-    clouds[0].collection.return_value.document.assert_called_with(SHA)
+    db.collection.assert_called_with("files")
+    db.collection.return_value.document.assert_called_with(SHA)
     # Only GET links for the existing original and thumbnail: no upload URL, so no trigger can fire.
-    calls = signing_calls(clouds[1])
+    calls = signing_calls(gcs)
     assert [(b, k, kw["method"]) for b, k, kw in calls] == [
         ("ecoguard-g21-media", f"{SHA}.jpg", "GET"),
         ("ecoguard-g21-derived", f"thumbs/{SHA}.jpg", "GET"),
@@ -302,24 +310,24 @@ def test_verified_active_record_is_a_duplicate(clouds):
     assert all(kw["expiration"] == timedelta(minutes=60) for _, _, kw in calls)
 
 
-def test_duplicate_before_its_thumbnail_exists_has_no_thumbnail_url(clouds):
-    stored_record(clouds[0], VERIFIED)
+def test_duplicate_before_its_thumbnail_exists_has_no_thumbnail_url(db):
+    stored_record(db, VERIFIED)
     body, _ = call(init_body(), headers=gateway_headers())
     assert (
         body["status"] == "duplicate" and body["file"]["thumbnail_url"] is None
     )
 
 
-def test_document_from_tagging_alone_is_not_a_duplicate(clouds):
+def test_document_from_tagging_alone_is_not_a_duplicate(db):
     stored_record(
-        clouds[0], {"tags": {"fox": 1}, "model_version": "yolo-1"}
+        db, {"tags": {"fox": 1}, "model_version": "yolo-1"}
     )  # no media_key
     body, _ = call(init_body(), headers=gateway_headers())
     assert body["status"] == "upload"
 
 
-def test_file_being_deleted_is_not_a_duplicate(clouds):
-    stored_record(clouds[0], {**VERIFIED, "status": "deleting"})
+def test_file_being_deleted_is_not_a_duplicate(db):
+    stored_record(db, {**VERIFIED, "status": "deleting"})
     body, _ = call(init_body(), headers=gateway_headers())
     assert body["status"] == "upload"
 
@@ -327,12 +335,9 @@ def test_file_being_deleted_is_not_a_duplicate(clouds):
 # ---- Failures ----
 
 
-def test_firestore_failure_returns_500_in_the_error_shape(clouds, capsys):
-    clouds[
-        0
-    ].collection.return_value.document.return_value.get.side_effect = (
-        RuntimeError("unavailable")
-    )
+def test_firestore_failure_returns_500_in_the_error_shape(capsys, db):
+    doc = db.collection.return_value.document.return_value
+    doc.get.side_effect = RuntimeError("unavailable")
     body, status = call(init_body(), headers=gateway_headers())
     assert status == 500 and body["error"]["code"] == "internal"
     logged = json.loads(capsys.readouterr().out.strip().splitlines()[-1])

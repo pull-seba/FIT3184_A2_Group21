@@ -6,7 +6,6 @@ Owner: member 2. Rubric: 2.1.1. Route: POST /uploads/init (see README.md).
 """
 
 import json
-import os
 import re
 import urllib.parse
 from datetime import datetime, timedelta, timezone
@@ -17,24 +16,15 @@ from google.auth.transport import requests as google_requests
 from google.cloud import firestore, storage
 
 from ecoguard_common.auth import get_user
+from ecoguard_common.logs import log
+from ecoguard_common.uploads import ACCEPTED, MB
 
-# Created once per instance, reused across requests.
 db = firestore.Client()
 gcs = storage.Client()
 credentials, _ = google.auth.default()
 
-MEDIA_BUCKET = os.environ.get("MEDIA_BUCKET", "ecoguard-g21-media")
-DERIVED_BUCKET = os.environ.get("DERIVED_BUCKET", "ecoguard-g21-derived")
-
-MB = 1024 * 1024
-# Accepted uploads (docs/contracts/storage-layout.md): content type -> (key extension, size limit).
-ACCEPTED = {
-    "image/jpeg": ("jpg", 20 * MB),
-    "image/png": ("png", 20 * MB),
-    "image/webp": ("webp", 20 * MB),
-    "video/mp4": ("mp4", 200 * MB),
-    "video/quicktime": ("mov", 200 * MB),
-}
+MEDIA_BUCKET = "ecoguard-g21-media"
+DERIVED_BUCKET = "ecoguard-g21-derived"
 SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 UPLOAD_URL_MINUTES = 15
 DOWNLOAD_URL_MINUTES = 60
@@ -49,14 +39,6 @@ def respond(body: dict, status: int = 200):
 def error(status: int, code: str, message: str):
     """Error shape from docs/contracts/api-routes.md."""
     return respond({"error": {"code": code, "message": message}}, status)
-
-
-def log(severity: str, message: str, **fields):
-    """One JSON line per event, which Cloud Logging parses. Never log signed URLs or tokens."""
-    print(
-        json.dumps({"severity": severity, "message": message, **fields}),
-        flush=True,
-    )
 
 
 def iso(moment: datetime) -> str:
@@ -115,12 +97,12 @@ def check_request(body: dict):
         return error(
             400, "bad_size", "size_bytes must be a positive whole number"
         )
-    limit = ACCEPTED[content_type][1]
-    if size > limit:
+    _, size_limit = ACCEPTED[content_type]
+    if size > size_limit:
         return error(
             413,
             "too_large",
-            f"{content_type} files are limited to {limit // MB} MB",
+            f"{content_type} files are limited to {size_limit // MB} MB",
         )
 
     filename = body.get("filename")
@@ -139,30 +121,19 @@ def check_request(body: dict):
 
 
 def duplicate_record(file_id: str):
-    """The file's record if this upload is a duplicate, else None.
-
-    Only process_upload writes media_key, after verifying the hash, so a document without it has no
-    verified file behind it: tagging can create the document first. A file mid-delete isn't "active".
-    Either way the browser gets an upload URL, and a PUT onto an object that still exists returns 412.
-    """
-    snapshot = db.collection("files").document(file_id).get()
-    record = snapshot.to_dict() if snapshot.exists else None
-    if record and record.get("media_key") and record.get("status") == "active":
-        return record
-    return None
+    """The file's record if it's active, else None."""
+    record = db.collection("files").document(file_id).get().to_dict() or {}
+    return record if record.get("status") == "active" else None
 
 
 def file_summary(file_id: str, record: dict) -> dict:
     """FileSummary (docs/contracts/api-routes.md) with fresh signed GET URLs."""
-    thumbnail_key = record.get(
-        "thumbnail_key"
-    )  # absent until the thumbnail is made
-    uploaded_at = record.get("uploaded_at")
+    thumbnail_key = record.get("thumbnail_key")
     return {
         "file_id": file_id,
         "file_type": record.get("file_type"),
         "url": signed_url(
-            record.get("media_bucket", MEDIA_BUCKET),
+            record["media_bucket"],
             record["media_key"],
             "GET",
             DOWNLOAD_URL_MINUTES,
@@ -173,13 +144,15 @@ def file_summary(file_id: str, record: dict) -> dict:
         if thumbnail_key
         else None,
         "tags": record.get("tags", {}),
-        "uploaded_at": iso(uploaded_at) if uploaded_at else None,
+        "uploaded_at": iso(record["uploaded_at"]),
     }
 
 
 def upload_response(file_id: str, body: dict, uploader_sub: str) -> dict:
     content_type = body["content_type"]
-    key = f"{file_id}.{ACCEPTED[content_type][0]}"  # extension from the type, never from the filename
+    # The extension comes from the type, never from the filename.
+    extension, _ = ACCEPTED[content_type]
+    media_key = f"{file_id}.{extension}"
     # Signed headers: the browser must send exactly these values, so it can't change any of them.
     # process_upload reads the x-goog-meta-* ones back as the object's metadata.
     headers = {
@@ -195,9 +168,9 @@ def upload_response(file_id: str, body: dict, uploader_sub: str) -> dict:
     expires_at = datetime.now(timezone.utc) + timedelta(
         minutes=UPLOAD_URL_MINUTES
     )
-    url = signed_url(
+    upload_url = signed_url(
         MEDIA_BUCKET,
-        key,
+        media_key,
         "PUT",
         UPLOAD_URL_MINUTES,
         content_type=content_type,
@@ -206,7 +179,7 @@ def upload_response(file_id: str, body: dict, uploader_sub: str) -> dict:
     return {
         "status": "upload",
         "file_id": file_id,
-        "upload_url": url,
+        "upload_url": upload_url,
         "headers": {"Content-Type": content_type, **headers},
         "expires_at": iso(expires_at),
     }
