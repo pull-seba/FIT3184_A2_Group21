@@ -54,10 +54,6 @@ def log(severity: str, message: str, **fields):
     )
 
 
-def iso(moment: datetime) -> str:
-    return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def day_start(text: str) -> datetime:
     """Midnight in Melbourne at the start of a YYYY-MM-DD day."""
     try:
@@ -136,7 +132,9 @@ def file_summary(file_id: str, record: dict) -> dict:
         if thumbnail_key
         else None,
         "tags": record.get("tags", {}),
-        "uploaded_at": iso(record["uploaded_at"]),
+        "uploaded_at": record["uploaded_at"]
+        .astimezone(timezone.utc)
+        .strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
 
