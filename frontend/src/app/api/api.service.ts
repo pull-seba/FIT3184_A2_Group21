@@ -17,13 +17,7 @@ export class ApiError extends Error {
 
 type Query = Record<string, string | number | undefined>;
 
-// Every call to the gateway goes through here (rubric 1.2). It attaches the Cognito ID token,
-// turns error responses into ApiError, and sends the user back to sign-in on a 401.
-//
-//   const api = inject(ApiService);
-//   const { results } = await api.post<{ results: FileSummary[] }>('/search/tags', { fox: 2 });
-//
-// FileSummary comes from the gallery (components/gallery/file-summary.ts, member 4).
+// Every call to the gateway goes through here (rubric 1.2).
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly auth = inject(AuthService);
@@ -42,8 +36,6 @@ export class ApiService {
   }
 
   private async request<T>(method: string, path: string, body?: unknown, query?: Query): Promise<T> {
-    // getIdToken refreshes an expired token first. Send the ID token, not the access token:
-    // only the ID token has the "aud" claim the gateway checks.
     const token = await this.auth.getIdToken();
     if (!token) return this.signedOut();
 
@@ -73,7 +65,6 @@ export class ApiService {
     return url.toString();
   }
 
-  // The session has ended (or the token was rejected): clear it and go to sign-in.
   private async signedOut(): Promise<never> {
     await this.auth.signOut();
     await this.router.navigateByUrl('/sign-in');
