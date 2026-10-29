@@ -1,0 +1,68 @@
+@if (loading()) {
+  <ul class="grid" aria-busy="true" aria-label="Loading results">
+    @for (tile of placeholderTiles; track tile) {
+      <li class="tile placeholder"></li>
+    }
+  </ul>
+} @else if (files().length === 0) {
+  <p class="empty">
+    <mat-icon>search_off</mat-icon>
+    {{ emptyMessage() }}
+  </p>
+} @else {
+  <mat-checkbox
+    class="select-all"
+    [checked]="allSelected()"
+    [indeterminate]="selected().length > 0 && !allSelected()"
+    (change)="toggleAll()"
+  >
+    Select all {{ files().length }}
+  </mat-checkbox>
+
+  <ul class="grid">
+    @for (file of files(); track file.file_id; let index = $index) {
+      <li class="tile" [class.selected]="isSelected(file)">
+        <button type="button" class="preview" (click)="open(index)">
+          @if (!file.thumbnail_url) {
+            <span class="note"><mat-icon>hourglass_empty</mat-icon>Thumbnail on its way</span>
+          } @else if (isBroken(file.thumbnail_url)) {
+            <span class="note"><mat-icon>link_off</mat-icon>Link expired, search again</span>
+          } @else {
+            <img
+              [src]="file.thumbnail_url"
+              [alt]="describe(file)"
+              loading="lazy"
+              (error)="markBroken(file.thumbnail_url)"
+            />
+          }
+          @if (file.file_type === 'video') {
+            <mat-icon class="badge video">play_circle</mat-icon>
+          }
+          @if (file.score !== undefined) {
+            <span class="badge score">{{ file.score | percent }} match</span>
+          }
+        </button>
+        <mat-checkbox
+          class="select"
+          [checked]="isSelected(file)"
+          (change)="toggle(file)"
+          [aria-label]="'Select ' + describe(file)"
+        />
+        <div class="details">
+          <app-tag-chips [tags]="file.tags" />
+          <time [attr.datetime]="file.uploaded_at">{{
+            file.uploaded_at | date: 'd MMM y, h:mm a'
+          }}</time>
+        </div>
+      </li>
+    }
+  </ul>
+
+  @if (selected().length > 0) {
+    <div class="actions" role="toolbar" aria-label="Actions for selected files">
+      <span class="count">{{ selected().length }} selected</span>
+      <ng-content />
+      <button mat-button type="button" (click)="clearSelection()">Clear</button>
+    </div>
+  }
+}

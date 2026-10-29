@@ -19,7 +19,7 @@ You own 14 marks alone (1.1, 1.2, 1.3, 2.3.3) and share 3.1 (auth screens) and 3
 | Integrate, Sat 31 | Every page inside the shell; review every service account and IAM role; `scripts/check-no-token.sh` passes |
 
 ## Watch out for
-- Gateway `securityDefinitions`: issuer `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>`, JWKS `<issuer>/.well-known/jwks.json`, audience = the app client ID. That audience only matches ID tokens.
+- Gateway `securityDefinitions`: issuer `https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>`, JWKS `<issuer>/.well-known/jwks.json`, audience = the app client ID. That audience only matches ID tokens.
 - The spec asks for email verification and a temporary password change; self sign-up gives no temporary password. Ask on Ed early (see `docs/decisions.md`).
 - Cloud Run services must be deployed with `--no-allow-unauthenticated`; only the gateway's service account gets `run.invoker`.
 - The AWS notify Lambda must verify the Google OIDC token: issuer, audience and the push service account's email.
