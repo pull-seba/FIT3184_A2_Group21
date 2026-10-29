@@ -13,11 +13,16 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Merge-only Firestore writes, each function writing its own fields | Several functions write the same record |
 | Video tag counts = maximum in any one frame | Summing counts the same animal once per frame |
 | Thumbnails named by file ID, not by the original's name | Thumbnail lookup works for every format |
-| Store bucket and key, sign URLs per response | Buckets stay private; URLs don't expire in the database |
+| Store bucket, key and `gs://` address; sign URLs per response | Buckets stay private and no stored link expires; the `gs://` addresses (added 27 Oct) give each record the storage URLs the spec asks for |
+| Separate media and derived buckets (27 Oct) | Storage triggers can't filter by prefix, so thumbnails or frames in the media bucket would re-trigger the pipeline |
+| Accepted uploads: JPEG, PNG and WebP up to 20 MB; MP4 and MOV up to 200 MB (27 Oct) | Formats OpenCV reads; HEIC isn't one |
+| `is_public` defaults to `true`, with a checkbox on the upload page, carried to `process_upload` in the signed `x-goog-meta-is-public` header (27 Oct) | Lost pet search covers public sightings only, and `process_upload` only sees what's on the object |
+| Shared code copied into each function folder before deploy (27 Oct) | `gcloud` uploads only the function's folder |
 | One results gallery, built by member 4 | Avoids three galleries with different behaviour |
 | Member 1 owns the gateway spec and app shell | Avoids merge conflicts on shared files |
 | One shared AWS account and one GCP project, everyone added | AWS Academy lab accounts can't add teammates |
 | Feature freeze at the end of Sat 31 Oct | Leaves two days for the demo checklist and reports |
+| Regions GCP `us-east1`, AWS `us-east-1` (27 Oct, replaces the Sydney proposal) | Firestore and the Cognito user pool already live there and neither can move; an Eventarc Cloud Storage trigger must share its bucket's region; Cloud Storage's free tier covers `us-east1` |
 
 ## Proposed (confirm by the date shown)
 
@@ -25,14 +30,9 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | --- | --- | --- | --- |
 | Functions in Python 3.12 with `functions-framework` | All | Mon 26 Oct | OpenCV and YOLO are Python |
 | Frontend in Angular 21 (LTS) and TypeScript on Firebase Hosting | 1 | Mon 26 Oct | Firebase Hosting gives HTTPS, which Cognito callback URLs need. Member 4 proposed Angular instead of React and Vite on 27 Oct; member 1 to confirm |
-| Regions GCP `australia-southeast1`, AWS `ap-southeast-2` | 1 | Mon 26 Oct | Both Sydney |
-| Separate media and derived buckets | 2 | Mon 26 Oct | Storage triggers can't filter by prefix |
 | Frames handed to tagging through the `frames-ready` topic | 2, 3 | Mon 26 Oct | Settles the frame handoff crossover |
 | Keep frames until the file is deleted | 2, 3 | Mon 26 Oct | Changes the crossover agreement "frames deleted after tagging"; keeping them lets the demo show 1 frame per 10 s |
-| Accepted types and size limits in `storage-layout.md` | 2 | Tue 27 Oct | |
-| `is_public` defaults to `true`, with a checkbox on the upload page | 2 | Tue 27 Oct | Lost pet search covers public sightings only |
 | One `sightings` document per detected cat or dog | 3 | Tue 27 Oct | Firestore vector search needs one vector per document |
-| Shared code copied into each function folder before deploy | 2 | Tue 27 Oct | `gcloud` uploads only the function's folder |
 
 ## Open
 
