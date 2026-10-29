@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Aussie EcoGuard - tag alert emails: SNS topic and the Lambda that GCP Pub/Sub pushes to (rubric 2.3.3). Owner: member 1."
 
-# Deploy as stack "ecoguard-notify" in us-east-1, then paste app.py into the function (README.md).
-
 Parameters:
   PushAccount:
     Type: String

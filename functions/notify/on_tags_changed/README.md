@@ -47,6 +47,7 @@ gcloud projects add-iam-policy-binding ecoguard-g21 \
   --member=serviceAccount:fn-on-tags-changed@ecoguard-g21.iam.gserviceaccount.com \
   --role=roles/eventarc.eventReceiver
 
+cp -r ../../../shared/python/ecoguard_common .   # gitignored copy of the shared package
 gcloud functions deploy on-tags-changed \
   --gen2 --runtime=python312 --region=us-east1 \
   --source=. --entry-point=handler \
@@ -56,4 +57,3 @@ gcloud functions deploy on-tags-changed \
   --trigger-location=us-east1 \
   --service-account=fn-on-tags-changed@ecoguard-g21.iam.gserviceaccount.com
 ```
-The second binding needs Project IAM Admin (Dylan or Jenul).

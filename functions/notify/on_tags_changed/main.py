@@ -4,16 +4,16 @@ Owner: member 1. Rubric: 2.3.3. Trigger: see README.md.
 """
 
 import json
-import os
 
 import functions_framework
 from google.cloud import pubsub_v1
 from google.events.cloud import firestore as firestoredata
 
-# Created once per instance and reused across events.
+from ecoguard_common.logs import log
+
 publisher = pubsub_v1.PublisherClient()
 
-TOPIC = os.environ.get("TOPIC", "projects/ecoguard-g21/topics/tag-changes")
+TOPIC = "projects/ecoguard-g21/topics/tag-changes"
 
 
 def tag_counts(document) -> dict[str, int]:
@@ -58,7 +58,6 @@ def handler(cloud_event):
 
     # A newly created document has no old value, which counts as "no tags before".
     added = added_tags(tag_counts(event.old_value), tag_counts(after))
-    # Writes that don't add a tag (thumbnails, pipeline status, tag removals) end here.
     if not added:
         return
 
@@ -71,13 +70,4 @@ def handler(cloud_event):
         "uploaded_at": time_field(after, "uploaded_at"),
     }
     publisher.publish(TOPIC, json.dumps(message).encode()).result()
-    print(
-        json.dumps(
-            {
-                "severity": "INFO",
-                "message": "published tag-changes",
-                "file_id": file_id,
-                "added": added,
-            }
-        )
-    )
+    log("INFO", "published tag-changes", file_id=file_id, added=added)
