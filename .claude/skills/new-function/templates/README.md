@@ -27,7 +27,7 @@ python -m pytest
 ```bash
 cp -r ../../../shared/python/ecoguard_common .   # gitignored copy of the shared package
 gcloud functions deploy FUNCTION_NAME \
-  --gen2 --runtime=python312 --region=australia-southeast1 \
+  --gen2 --runtime=python312 --region=us-east1 \
   --source=. --entry-point=handler --trigger-http \
   --no-allow-unauthenticated \
   --service-account=fn-FUNCTION-NAME@PROJECT_ID.iam.gserviceaccount.com
