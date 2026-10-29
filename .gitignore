@@ -26,6 +26,3 @@ dist/
 
 # OS
 .DS_Store
-
-# AWS SAM / CloudFormation build output
-.aws-sam/
