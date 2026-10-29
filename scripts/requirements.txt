@@ -1,0 +1,6 @@
+# For seed_data.py: pip install -r scripts/requirements.txt
+google-cloud-firestore==2.*
+google-cloud-storage==3.*
+numpy==2.*
+opencv-python-headless==4.*
+pytest==9.*
