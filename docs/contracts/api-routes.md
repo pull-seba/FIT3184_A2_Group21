@@ -56,13 +56,13 @@ Request:
 ```json
 { "sha256": "<64 hex>", "filename": "fox-cam3.jpg", "content_type": "image/jpeg", "size_bytes": 2483021, "is_public": true }
 ```
-Response when the file already exists (no upload happens and no trigger fires):
+Response when `files/<sha256>` is an active record (no upload happens and no trigger fires):
 ```json
 { "status": "duplicate", "file": { "...": "FileSummary" } }
 ```
 Response when the browser should upload:
 ```json
-{ "status": "upload", "file_id": "<64 hex>", "upload_url": "<signed PUT URL>", "headers": { "Content-Type": "image/jpeg", "x-goog-if-generation-match": "0", "x-goog-meta-uploaded-by": "<sub>", "x-goog-meta-original-filename": "fox-cam3.jpg" }, "expires_at": "2026-10-26T10:00:00Z" }
+{ "status": "upload", "file_id": "<64 hex>", "upload_url": "<signed PUT URL>", "headers": { "Content-Type": "image/jpeg", "x-goog-if-generation-match": "0", "x-goog-meta-uploaded-by": "<sub>", "x-goog-meta-original-filename": "fox-cam3.jpg", "x-goog-meta-is-public": "true" }, "expires_at": "2026-10-26T10:00:00Z" }
 ```
 Errors: `400` bad hash, `413` over the size limit, `415` type not accepted.
 

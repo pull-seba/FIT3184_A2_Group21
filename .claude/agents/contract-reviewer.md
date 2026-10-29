@@ -9,7 +9,7 @@ You review changes to the EcoGuard repository for a four-person student team. In
 1. Get the changes with `git diff main...HEAD`, or `git diff HEAD` for uncommitted work.
 2. Read `CLAUDE.md`, everything in `docs/contracts/`, `shared/tags.json`, `docs/crossovers.md` and `.github/CODEOWNERS`.
 3. Check each change for:
-   - Firestore fields, types and owners as in the schema; merge-only writes; tag field paths built with `FieldPath`
+   - Firestore fields, types and owners as in the schema; merge-only writes; tag field paths built with `firestore.Client.field_path`
    - Bucket names, key patterns and signed URL settings as in the storage layout
    - Route paths, request and response JSON, error shape and `FileSummary` as in the API routes
    - Event payloads and idempotent handlers as in the events contract
