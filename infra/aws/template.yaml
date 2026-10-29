@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Aussie EcoGuard - Cognito user pool and web app client (rubric 1.1). Owner: member 1."
 
 # Deploy (needs a person to approve):
-#   aws cloudformation deploy --template-file infra/aws/template.yaml --stack-name ecoguard-auth --region ap-southeast-2
+#   aws cloudformation deploy --template-file infra/aws/template.yaml --stack-name ecoguard-auth --region us-east-1
 # Then copy the UserPoolId and UserPoolClientId outputs into frontend/src/environments/environment.ts.
 # Storage, database and tagging live on GCP (docs/architecture.md), so this stack holds only Cognito.
 
