@@ -5,5 +5,5 @@ export const environment = {
   userPoolId: 'us-east-1_1ni2DpRgV',
   userPoolClientId: '3gr1ln2m7ohrk1jleavngbepvk',
   // The API Gateway URL, from `gcloud api-gateway gateways describe` (infra/gateway/README.md).
-  apiBase: 'https://REPLACE-WITH-GATEWAY-HOST.ue.gateway.dev',
+  apiBase: 'https://ecoguard-gw-2qp1rpih.ue.gateway.dev',
 };
