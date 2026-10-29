@@ -6,8 +6,8 @@
 A person must approve every deploy.
 
 ```sh
-aws cloudformation deploy --template-file infra/aws/template.yaml --stack-name ecoguard-auth --region ap-southeast-2
-aws cloudformation describe-stacks --stack-name ecoguard-auth --region ap-southeast-2 --query "Stacks[0].Outputs"
+aws cloudformation deploy --template-file infra/aws/template.yaml --stack-name ecoguard-auth --region us-east-1
+aws cloudformation describe-stacks --stack-name ecoguard-auth --region us-east-1 --query "Stacks[0].Outputs"
 ```
 
 Copy `UserPoolId` and `UserPoolClientId` into `frontend/src/environments/environment.ts`. They are public identifiers, not secrets. `Issuer` and `UserPoolClientId` (the audience) go in the gateway's security definition.
@@ -24,7 +24,7 @@ Run `cd frontend && npm start` and open http://localhost:5173.
 | Protected pages | Signed out, open http://localhost:5173/: you're redirected to `/sign-in` |
 
 ```sh
-aws cognito-idp admin-create-user --region ap-southeast-2 --user-pool-id <UserPoolId> --username someone@example.com \
+aws cognito-idp admin-create-user --region us-east-1 --user-pool-id <UserPoolId> --username someone@example.com \
   --user-attributes Name=email,Value=someone@example.com Name=email_verified,Value=true \
                     Name=given_name,Value=Test Name=family_name,Value=User
 ```
