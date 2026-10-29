@@ -96,11 +96,14 @@ class BakeoffTests(unittest.TestCase):
             [[label("Fox", 91, [88, 72])], [label("Rabbit", 62, [60])]]
         )
         cache = bakeoff.collect(rows, self.dir, fake)
-        bakeoff.score_report(rows, cache, self.label_map, ["Hare"], 0, self.dir)
+        bakeoff.score_report(
+            rows, cache, self.label_map, ["Hare"], 1.0, self.dir
+        )
         best, _ = bakeoff.suggest_thresholds(rows, cache, self.label_map)
-        self.assertEqual(
-            best["rabbit"], 65
-        )  # first threshold above the 62 hare
+        # Fox 91 on the fox photo: highest threshold that still finds it.
+        self.assertEqual(best["fox"], 90)
+        # Rabbit 62 on the hare photo must not get through.
+        self.assertGreaterEqual(best["rabbit"], 65)
         self.assertTrue((self.dir / "bakeoff_summary.md").exists())
         with (self.dir / "bakeoff_results.csv").open() as f:
             results = list(csv.DictReader(f))

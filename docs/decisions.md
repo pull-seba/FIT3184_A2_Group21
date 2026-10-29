@@ -23,6 +23,8 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Frames handed to tagging through the `frames-ready` topic (28 Oct) | Settles the frame handoff crossover; tagging keeps each tag's highest count in any one frame |
 | Keep frames until the file is deleted (28 Oct) | Replaces "frames deleted after tagging"; the demo can show 1 frame per 10 s, and delete removes them with the file |
 | One `sightings` document per detected cat or dog (28 Oct) | Firestore vector search needs one vector per document |
+| Tagging uses Amazon Rekognition `DetectLabels` in AWS `us-east-1` as the first model, replacing the planned detector container (29 Oct, agreed in the team chat) | Rekognition names our species directly (fox, toad, pig, rabbit), where stock YOLO or MegaDetector would need a second species model. `us-east-1` is the closest AWS region to our GCP compute in `us-east1`, and Rekognition keeps no state, so it needn't share a region with other AWS services. Images are sent for analysis only and never stored on AWS |
+| Counts come from Rekognition's boxes; when a tag has no boxes of its own, it borrows the boxes Rekognition put on another animal label in the same photo. No MegaDetector (29 Oct) | Bake-off on 140 photos (`tools/testset`): photos with 2+ animals get a count of 2+ for pigs 100%, foxes 67%, toads 33% and rabbits 33% with borrowing (0-50% without), with one over-count. Rubric 2.1.3 accepts Rekognition alone; a counting model can be added later through `config/model`. Toad groups are undercounted, a known limitation |
 
 ## Proposed (confirm by the date shown)
 

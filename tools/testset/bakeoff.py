@@ -91,7 +91,14 @@ def image_bytes(path):
     data = path.read_bytes()
     if len(data) <= MAX_BYTES:
         return data
-    from PIL import Image  # only needed for oversized images
+    try:
+        from PIL import Image  # only needed for oversized images
+    except ImportError:
+        sys.exit(
+            f"{path.name} is {len(data) / 1e6:.1f} MB, over Rekognition's "
+            "5 MB limit. Run `pip install pillow` so it can be shrunk, "
+            "then run again (finished images are cached)."
+        )
 
     img = Image.open(path)
     img.thumbnail((2048, 2048))
@@ -321,8 +328,12 @@ def evaluate(
     return out
 
 
-def suggest_thresholds(rows, cache, label_map, max_false=0):
-    """Per tag: lowest threshold whose false tags on other images <= max_false."""
+def suggest_thresholds(rows, cache, label_map, fp_weight=1.0):
+    """Per tag: the threshold with the best (correct - fp_weight * false) tags.
+
+    Correct = images of the tag's species that get the tag; false = images of
+    anything else that get it. Ties go to the higher threshold (fewer false).
+    """
     tags = sorted(set(label_map.values()))
     best = {}
     sweep = {}
@@ -336,8 +347,10 @@ def suggest_thresholds(rows, cache, label_map, max_false=0):
             )
             false = sum(1 for r in results if tag in r["false_tags"])
             sweep[tag].append((t, hits, n, false))
-        ok = [s for s in sweep[tag] if s[3] <= max_false]
-        best[tag] = ok[0][0] if ok else THRESHOLDS[-1]
+        top = max(h - fp_weight * f for _, h, _, f in sweep[tag])
+        best[tag] = max(
+            t for t, h, _, f in sweep[tag] if h - fp_weight * f == top
+        )
     return best, sweep
 
 
@@ -345,8 +358,8 @@ def pct(a, b):
     return f"{100 * a / b:.0f}%" if b else "-"
 
 
-def score_report(rows, cache, label_map, fallback, max_false, data_dir):
-    best, sweep = suggest_thresholds(rows, cache, label_map, max_false)
+def score_report(rows, cache, label_map, fallback, fp_weight, data_dir):
+    best, sweep = suggest_thresholds(rows, cache, label_map, fp_weight)
     lines = ["# Rekognition bake-off", ""]
     lines += [
         "Recall = share of that species' images where the tag was found. "
@@ -364,7 +377,10 @@ def score_report(rows, cache, label_map, fallback, max_false, data_dir):
     results = evaluate(rows, cache, label_map, best, THRESHOLDS[-1])
     lines += [
         "",
-        f"## At the suggested per-tag thresholds (max {max_false} false)",
+        "## At the suggested per-tag thresholds",
+        "",
+        f"Chosen per tag to maximise correct - {fp_weight:g} x false tags "
+        "(ties go to the higher threshold).",
         "",
         "| Tag | Threshold | Images | Recall | Count exact | Recall clear "
         "| Recall night | Recall other |",
@@ -532,10 +548,11 @@ def main():
         help="labels that should send an image to the fallback model",
     )
     ap.add_argument(
-        "--max-false",
-        type=int,
-        default=0,
-        help="false tags allowed per tag when suggesting thresholds",
+        "--fp-weight",
+        type=float,
+        default=1.0,
+        help="how much a false tag costs vs a correct one when picking "
+        "thresholds (2 = a false tag is twice as bad)",
     )
     ap.add_argument("--region", default=REGION)
     ap.add_argument("--data", default=str(DATA_DIR))
@@ -567,7 +584,7 @@ def main():
                 f"{len(missing)} images have no Rekognition result yet - "
                 "run `bakeoff.py run` first"
             )
-        score_report(rows, cache, label_map, fallback, args.max_false, data_dir)
+        score_report(rows, cache, label_map, fallback, args.fp_weight, data_dir)
 
 
 if __name__ == "__main__":
