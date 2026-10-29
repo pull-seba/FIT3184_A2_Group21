@@ -7,7 +7,7 @@ from unittest import mock
 with mock.patch("boto3.client"):
     import app
 
-DOMAIN = "abc123.lambda-url.ap-southeast-2.on.aws"
+DOMAIN = "abc123.lambda-url.us-east-1.on.aws"
 GOOD_CLAIMS = {
     "iss": "https://accounts.google.com",
     "aud": f"https://{DOMAIN}/",

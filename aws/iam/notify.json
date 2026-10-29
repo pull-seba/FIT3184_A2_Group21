@@ -5,13 +5,13 @@
       "Sid": "PublishTagAlerts",
       "Effect": "Allow",
       "Action": "sns:Publish",
-      "Resource": "arn:aws:sns:ap-southeast-2:<account-id>:ecoguard-tag-alerts"
+      "Resource": "arn:aws:sns:us-east-1:<account-id>:ecoguard-tag-alerts"
     },
     {
       "Sid": "WriteOwnLogs",
       "Effect": "Allow",
       "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
-      "Resource": "arn:aws:logs:ap-southeast-2:<account-id>:log-group:/aws/lambda/ecoguard-notify:*"
+      "Resource": "arn:aws:logs:us-east-1:<account-id>:log-group:/aws/lambda/ecoguard-notify:*"
     }
   ]
 }

@@ -20,7 +20,7 @@ python -m pytest
 ```
 
 ## Deploy
-1. CloudFormation → Create stack → upload `aws/notify/template.yaml` → name `ecoguard-notify`. Note the `PushEndpoint` and `TopicArn` outputs.
+1. In region `us-east-1` (N. Virginia): CloudFormation → Create stack → upload `aws/notify/template.yaml` → name `ecoguard-notify`. Note the `PushEndpoint` and `TopicArn` outputs.
 2. Lambda → `ecoguard-notify` → Code: replace `index.py` with the contents of `app.py` → Deploy.
 3. In GCP Cloud Shell, once `tag-changes` exists:
    ```bash
@@ -28,7 +28,7 @@ python -m pytest
 
    gcloud pubsub subscriptions create tag-changes-to-aws \
      --topic=tag-changes \
-     --push-endpoint=https://fkj6ttbwxk4rsvvhpaxoaflyqm0xmfnj.lambda-url.ap-southeast-2.on.aws/ \
+     --push-endpoint=<PushEndpoint output from step 1> \
      --push-auth-service-account=ecoguard-pubsub-push@ecoguard-g21.iam.gserviceaccount.com
    ```
 

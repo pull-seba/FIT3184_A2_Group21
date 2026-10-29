@@ -18,6 +18,7 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Member 1 owns the gateway spec and app shell | Avoids merge conflicts on shared files |
 | One shared AWS account and one GCP project, everyone added | AWS Academy lab accounts can't add teammates |
 | Feature freeze at the end of Sat 31 Oct | Leaves two days for the demo checklist and reports |
+| Regions GCP `us-east1`, AWS `us-east-1` | Replaces the Sydney proposal; the two clouds sit next to each other and `us-east1` is in the Cloud Storage free tier |
 
 ## Proposed (confirm by the date shown)
 
@@ -25,7 +26,6 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | --- | --- | --- | --- |
 | Functions in Python 3.12 with `functions-framework` | All | Mon 26 Oct | OpenCV and YOLO are Python |
 | Frontend in Angular 21 (LTS) and TypeScript on Firebase Hosting | 1 | Mon 26 Oct | Firebase Hosting gives HTTPS, which Cognito callback URLs need. Member 4 proposed Angular instead of React and Vite on 27 Oct; member 1 to confirm |
-| Regions GCP `australia-southeast1`, AWS `ap-southeast-2` | 1 | Mon 26 Oct | Both Sydney |
 | Separate media and derived buckets | 2 | Mon 26 Oct | Storage triggers can't filter by prefix |
 | Frames handed to tagging through the `frames-ready` topic | 2, 3 | Mon 26 Oct | Settles the frame handoff crossover |
 | Keep frames until the file is deleted | 2, 3 | Mon 26 Oct | Changes the crossover agreement "frames deleted after tagging"; keeping them lets the demo show 1 frame per 10 s |
