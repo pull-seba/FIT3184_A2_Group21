@@ -23,6 +23,7 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | One shared AWS account and one GCP project, everyone added | AWS Academy lab accounts can't add teammates |
 | Feature freeze at the end of Sat 31 Oct | Leaves two days for the demo checklist and reports |
 | Regions GCP `us-east1`, AWS `us-east-1` (27 Oct, replaces the Sydney proposal) | Firestore and the Cognito user pool already live there and neither can move; an Eventarc Cloud Storage trigger must share its bucket's region; Cloud Storage's free tier covers `us-east1` |
+| `/notifications/subscriptions` runs as the GCP function `notify/subscriptions`, which calls SNS with short-lived AWS credentials exchanged for its Google ID token (30 Oct) | Same path as every other route: behind the gateway's Cognito check, no public URL, caller from `ecoguard_common.auth.get_user`. No AWS keys, and SNS stays the one place alert tags live |
 
 ## Proposed (confirm by the date shown)
 
@@ -41,5 +42,4 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | How the Lex fulfilment Lambda authenticates to the GCP gateway | 1, 4 | Wed 28 Oct | Forward the user's ID token in Lex session attributes (simplest), or Workload Identity Federation with a separate gateway audience |
 | Embedding model for lost pet search | 3 | Tue 27 Oct | CLIP in the tagging container (free, larger image) or Vertex AI multimodal embeddings (managed, billed per call) |
 | Cognito's temporary password step | 1 | Tue 27 Oct | The spec asks for email verification and a temporary password change, but self sign-up gives no temporary password; admin-created users do. Ask on Ed, or create users through `AdminCreateUser` from the sign-up page |
-| Where the notification subscriptions API runs | 1 | Wed 28 Oct | A GCP function calling AWS through federation, or an AWS Lambda behind the GCP gateway |
 | Who owns the team report, architecture diagram and user guide | All | Tue 27 Oct | Lighter loads: members 1 and 2 |

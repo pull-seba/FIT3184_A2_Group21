@@ -246,8 +246,6 @@ paths:
           description: CORS headers only
 
   /notifications/subscriptions:
-    # Where this runs is still open in docs/decisions.md. The address is the GCP-function option;
-    # change it (or point it at an AWS Lambda URL) once decided.
     get:
       operationId: getSubscriptions
       summary: The caller's alert tags (member 1, 2.3.3)
