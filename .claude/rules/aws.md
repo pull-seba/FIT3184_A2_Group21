@@ -11,4 +11,4 @@ paths:
 - The Pub/Sub push receiver verifies the Google OIDC token on every request: issuer `https://accounts.google.com`, audience equal to the configured endpoint, `email` equal to the push service account. Reject anything else with `401`.
 - SNS topic `ecoguard-tag-alerts`: publish with message attribute `tags` as `String.Array`; each email subscription carries a filter policy on `tags`. Email bodies name the species and counts and link to the app, never to a signed URL.
 - Lex V2, locale `en_AU`. Export the bot definition into `aws/lex/` so it lives in Git.
-- Region `ap-southeast-2` unless `docs/decisions.md` says otherwise.
+- Region `us-east-1` unless `docs/decisions.md` says otherwise.
