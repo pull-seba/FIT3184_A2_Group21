@@ -1,0 +1,27 @@
+<div class="stage">
+  @if (file().file_type === 'video') {
+    <video [src]="file().url" controls autoplay></video>
+  } @else {
+    <img [src]="file().url" [alt]="describe(file())" />
+  }
+</div>
+<div class="caption">
+  <app-tag-chips [tags]="file().tags" />
+  <time [attr.datetime]="file().uploaded_at">{{
+    file().uploaded_at | date: 'd MMM y, h:mm a'
+  }}</time>
+</div>
+<mat-dialog-actions>
+  @if (count > 1) {
+    <button mat-icon-button type="button" (click)="step(-1)" aria-label="Previous file">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <span>{{ index() + 1 }} of {{ count }}</span>
+    <button mat-icon-button type="button" (click)="step(1)" aria-label="Next file">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  }
+  <span class="spacer"></span>
+  <a mat-button [href]="file().url" target="_blank" rel="noopener">Open original</a>
+  <button mat-flat-button type="button" mat-dialog-close>Close</button>
+</mat-dialog-actions>
