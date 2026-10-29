@@ -1,19 +1,5 @@
 # API Gateway spec for every route in docs/contracts/api-routes.md. Owner: member 1. Rubric 1.2, 1.3.
 # API Gateway only accepts OpenAPI 2.0 (Swagger), not 3.x.
-#
-# How a call works:
-# 1. The browser (or the Lex Lambda) sends "Authorization: Bearer <Cognito ID token>".
-# 2. The gateway checks the token's signature against the user pool's public keys (jwks_uri), its
-#    issuer and its audience (the app client ID). Anything else gets 401 before a function runs.
-# 3. The gateway calls the function with its own Google-signed token, so only the gateway's service
-#    account can invoke the functions (each is deployed with --no-allow-unauthenticated), and passes
-#    the Cognito claims on in the X-Apigateway-Api-Userinfo header (read by ecoguard_common.auth).
-#
-# Backends are Cloud Functions gen2 URLs: https://<region>-<project>.cloudfunctions.net/<function>.
-# Region us-east1 matches infra/gcp/setup.sh, the deployed functions and docs/decisions.md.
-# The Cognito pool is the ecoguard-auth stack in AWS us-east-1.
-# Path parameters are passed to the function as query parameters (/files/abc -> ?file_id=abc),
-# because the default CONSTANT_ADDRESS translation sends every call to the function's root.
 
 swagger: "2.0"
 info:
@@ -65,7 +51,6 @@ paths:
           description: CORS headers only
 
   /files/{file_id}:
-    # Declared once for the path, so both operations below have it.
     parameters:
       - name: file_id
         in: path
@@ -284,7 +269,7 @@ paths:
         "200":
           description: "{tags: [...]}"
     options:
-      operationId: getSubscriptionsCors
+      operationId: subscriptionsCors
       summary: CORS preflight; browsers send it without a token, so it has no security
       security: []
       x-google-backend:
