@@ -5,8 +5,6 @@ export interface Message {
   type: 'error' | 'success';
 }
 
-// Shared by the auth pages: disables the submit button while a request is in flight and turns
-// any thrown error (including Cognito's, which have readable messages) into an error message.
 export class FormState {
   readonly busy = signal(false);
   readonly message = signal<Message | null>(null);

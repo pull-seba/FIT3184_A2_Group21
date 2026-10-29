@@ -9,7 +9,6 @@ import {
 
 import { environment } from '../../environments/environment';
 
-// The ID token claims the app shows. The gateway forwards the same claims to every function.
 export interface UserClaims {
   sub: string;
   email: string;
@@ -28,7 +27,6 @@ export class AuthService {
     ClientId: environment.userPoolClientId,
   });
 
-  // The signed-in user, or null. The shell reads it to show the name and the sign-out button.
   readonly user = signal<UserClaims | null>(null);
 
   // Set while an invited user must replace their temporary password.
@@ -93,15 +91,13 @@ export class AuthService {
     );
   }
 
-  // Reads the stored session (refreshing it if the ID token has expired) and updates `user`.
   async loadUser(): Promise<UserClaims | null> {
     const session = await this.session();
     this.user.set(session ? claimsOf(session) : null);
     return this.user();
   }
 
-  // The raw ID token for "Authorization: Bearer <token>", or null when signed out. Send the ID
-  // token, not the access token: only the ID token has the `aud` claim the gateway checks.
+  // Send the ID token, not the access token: only it has the `aud` claim the gateway checks.
   async getIdToken(): Promise<string | null> {
     const session = await this.session();
     return session ? session.getIdToken().getJwtToken() : null;
