@@ -11,7 +11,7 @@
 #
 # Backends are Cloud Functions gen2 URLs: https://<region>-<project>.cloudfunctions.net/<function>.
 # Region us-east1 matches infra/gcp/setup.sh, the deployed functions and docs/decisions.md.
-# The Cognito pool is in AWS us-east-1; fill in <UserPoolId> and <UserPoolClientId> once it is deployed.
+# The Cognito pool is the ecoguard-auth stack in AWS us-east-1.
 # Path parameters are passed to the function as query parameters (/files/abc -> ?file_id=abc),
 # because the default CONSTANT_ADDRESS translation sends every call to the function's root.
 
@@ -33,10 +33,10 @@ securityDefinitions:
     type: oauth2
     flow: implicit
     authorizationUrl: ""
-    x-google-issuer: https://cognito-idp.us-east-1.amazonaws.com/<UserPoolId>
-    x-google-jwks_uri: https://cognito-idp.us-east-1.amazonaws.com/<UserPoolId>/.well-known/jwks.json
+    x-google-issuer: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_1ni2DpRgV
+    x-google-jwks_uri: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_1ni2DpRgV/.well-known/jwks.json
     # The app client ID. Only ID tokens carry it as "aud"; access tokens are rejected.
-    x-google-audiences: <UserPoolClientId>
+    x-google-audiences: 3gr1ln2m7ohrk1jleavngbepvk
 
 # Applies to every operation below. Each one repeats it too, so no route can be missed.
 security:

@@ -4,9 +4,9 @@
 
 | Setting | Value |
 | --- | --- |
-| Issuer | `https://cognito-idp.us-east-1.amazonaws.com/<UserPoolId>` |
+| Issuer | `https://cognito-idp.us-east-1.amazonaws.com/us-east-1_1ni2DpRgV` |
 | Keys (JWKS) | `<issuer>/.well-known/jwks.json` |
-| Audience | `<UserPoolClientId>` (the `ecoguard-web` app client) |
+| Audience | `3gr1ln2m7ohrk1jleavngbepvk` (the `ecoguard-web` app client) |
 | Gateway service account | `ecoguard-gateway@ecoguard-g21.iam.gserviceaccount.com`, holding only `roles/run.invoker` on each function |
 
 ## What each function needs
