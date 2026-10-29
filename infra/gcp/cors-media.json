@@ -1,0 +1,16 @@
+[
+  {
+    "origin": [
+      "http://localhost:5173"
+    ],
+    "method": ["PUT"],
+    "responseHeader": [
+      "Content-Type",
+      "x-goog-if-generation-match",
+      "x-goog-meta-uploaded-by",
+      "x-goog-meta-original-filename",
+      "x-goog-meta-is-public"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
