@@ -28,7 +28,7 @@ python -m pytest
 
    gcloud pubsub subscriptions create tag-changes-to-aws \
      --topic=tag-changes \
-     --push-endpoint=<PushEndpoint output from step 1> \
+     --push-endpoint=https://g543yugmmuegx4ype63jprfwly0mslvp.lambda-url.us-east-1.on.aws/ \
      --push-auth-service-account=ecoguard-pubsub-push@ecoguard-g21.iam.gserviceaccount.com
    ```
 
