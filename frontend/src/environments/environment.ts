@@ -3,4 +3,6 @@
 export const environment = {
   userPoolId: 'us-east-1_1ni2DpRgV',
   userPoolClientId: '3gr1ln2m7ohrk1jleavngbepvk',
+  // The chat widget swaps the user's ID token for Lex-only AWS credentials here.
+  identityPoolId: 'us-east-1:a8a28691-1a30-41ba-b889-8996d8cea535',
 };
