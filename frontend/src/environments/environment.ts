@@ -5,4 +5,6 @@ export const environment = {
   userPoolClientId: '3gr1ln2m7ohrk1jleavngbepvk',
   // The API Gateway URL, from `gcloud api-gateway gateways describe` (infra/gateway/README.md).
   apiBase: 'https://ecoguard-gw-2qp1rpih.ue.gateway.dev',
+  // The chat widget swaps the user's ID token for Lex-only AWS credentials here.
+  identityPoolId: 'us-east-1:a8a28691-1a30-41ba-b889-8996d8cea535',
 };

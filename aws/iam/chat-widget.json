@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "TalkToTheChatbotOnly",
+      "Effect": "Allow",
+      "Action": "lex:RecognizeText",
+      "Resource": "arn:aws:lex:us-east-1:<account-id>:bot-alias/<bot-id>/<alias-id>"
+    }
+  ]
+}
