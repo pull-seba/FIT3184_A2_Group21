@@ -1,16 +1,19 @@
 # AWS: Cognito (owner: member 1)
 
-`template.yaml` creates the Cognito user pool `ecoguard-users` and the web app client `ecoguard-web` (rubric 1.1).
+`template.yaml` creates the Cognito user pool `ecoguard-users`, the web app client `ecoguard-web` (rubric 1.1), and the identity pool `ecoguard_chat_widget` that lets signed-in users call the chatbot from the browser (1.3). Signed-out users get no identity, and the role allows only `lex:RecognizeText` on the bot alias (`aws/iam/chat-widget.json`).
 
 ## Deploy
 A person must approve every deploy.
 
 ```sh
-aws cloudformation deploy --template-file infra/aws/template.yaml --stack-name ecoguard-auth --region us-east-1
+aws cloudformation deploy --template-file infra/aws/template.yaml --stack-name ecoguard-auth --region us-east-1 \
+  --capabilities CAPABILITY_IAM --parameter-overrides LexBotAliasArn=<bot alias ARN>
 aws cloudformation describe-stacks --stack-name ecoguard-auth --region us-east-1 --query "Stacks[0].Outputs"
 ```
 
-Copy `UserPoolId` and `UserPoolClientId` into `frontend/src/environments/environment.ts`. They are public identifiers, not secrets. `Issuer` and `UserPoolClientId` (the audience) go in the gateway's security definition.
+Without `LexBotAliasArn`, the identity pool and role are created with no Lex permission; deploy again with the ARN once the bot exists. Later deploys keep the stored ARN unless you pass a new one.
+
+Copy `UserPoolId`, `UserPoolClientId` and `IdentityPoolId` into `frontend/src/environments/environment.ts`. They are public identifiers, not secrets. `Issuer` and `UserPoolClientId` (the audience) go in the gateway's security definition.
 
 ## Testing authentication
 Run `cd frontend && npm start` and open http://localhost:5173.
