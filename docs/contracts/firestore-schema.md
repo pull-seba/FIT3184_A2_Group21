@@ -5,7 +5,7 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 ## Rules
 - `file_id` and every `files` document ID is the lowercase hex SHA-256 of the file's bytes (64 characters).
 - Write only the fields your function owns, using `set(data, merge=True)` or `update()`. Never call `set()` without `merge=True` on a document that may exist.
-- Every `*_at` field is written with `firestore.SERVER_TIMESTAMP`.
+- Every `*_at` field is written with `firestore.SERVER_TIMESTAMP`, except a seeded record's `uploaded_at` (see `seed`).
 - Store bucket names, object keys and each object's permanent `gs://` address. Never store a signed URL: it expires. Sign one when building a response.
 - Tag names must exist in `shared/tags.json`. Tag names can contain spaces ("feral pig"), so build field paths with `firestore.FieldPath("tags", name)`, never by string concatenation.
 
@@ -36,7 +36,7 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 | `manual_tags` | array of strings | 4 `bulk_tags` | Tags a person added by hand. Re-tagging keeps them |
 | `model_version` | string | 3 tagging | The config version that produced the automatic tags |
 | `tagged_at` | timestamp | 3 tagging | |
-| `seed` | boolean | 2 `seed_data.py` | `true` only on seeded test records, so they are easy to wipe |
+| `seed` | boolean | 2 `seed_data.py` | `true` only on seeded test records, so they are easy to wipe. `seed_data.py` writes the rest of a seeded record too, following this table, with `uploaded_at` in the past so date filters such as "yesterday" can be tested |
 
 ### Who writes `tags`
 - Tagging (3) runs in a transaction: it writes the detected tags, then puts back every tag in `manual_tags` with its existing count.
