@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Member 2's GCP resources: the media and derived buckets, CORS so the browser can upload, and one
-# service account per ingestion function holding only the roles that function uses.
+# Member 2's GCP resources: the media and derived buckets, CORS so the browser can upload, the
+# frames-ready topic, and one service account per ingestion function holding only the roles it uses.
 # Run after setup.sh. Buckets and accounts need Editor; the last section also needs Project IAM Admin
 # and Service Account Admin (or Owner). Safe to re-run: each step skips what exists or repeats harmlessly.
 # Usage: infra/gcp/ingestion.sh
@@ -55,6 +55,12 @@ bucket_role "$DERIVED_BUCKET" "$UPLOAD_INIT" roles/storage.objectViewer
 # process_upload reads each new original to hash it and deletes rejected ones. objectUser is the
 # narrowest predefined role that includes delete.
 bucket_role "$MEDIA_BUCKET" "$PROCESS_UPLOAD" roles/storage.objectUser
+# It also writes thumbnails and frames, and a retry overwrites them, which needs delete too.
+bucket_role "$DERIVED_BUCKET" "$PROCESS_UPLOAD" roles/storage.objectUser
+
+# process_upload publishes each video's frames here for member 3's tagging (docs/contracts/events.md).
+gcloud pubsub topics describe frames-ready --project="$PROJECT_ID" >/dev/null 2>&1 ||
+  gcloud pubsub topics create frames-ready --project="$PROJECT_ID" >/dev/null
 
 # ---- Needs Project IAM Admin and Service Account Admin (or Owner) ----
 project_role() {
@@ -67,6 +73,9 @@ project_role "serviceAccount:$PROCESS_UPLOAD" roles/datastore.user
 # Signing without a key file goes through the IAM credentials API, which needs Token Creator on itself.
 gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PROJECT_ID" \
   --member="serviceAccount:$UPLOAD_INIT" --role=roles/iam.serviceAccountTokenCreator >/dev/null
+# Publisher on the one topic it uses, not on the project.
+retry gcloud pubsub topics add-iam-policy-binding frames-ready --project="$PROJECT_ID" \
+  --member="serviceAccount:$PROCESS_UPLOAD" --role=roles/pubsub.publisher >/dev/null
 
 # The upload trigger: Cloud Storage publishes each event to Pub/Sub through its service agent (one grant
 # covers every storage trigger in the project, member 3's too), and Eventarc delivers it to the function
