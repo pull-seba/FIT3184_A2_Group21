@@ -73,9 +73,12 @@ project_role "serviceAccount:$PROCESS_UPLOAD" roles/datastore.user
 # Signing without a key file goes through the IAM credentials API, which needs Token Creator on itself.
 gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PROJECT_ID" \
   --member="serviceAccount:$UPLOAD_INIT" --role=roles/iam.serviceAccountTokenCreator >/dev/null
-# Publisher on the one topic it uses, not on the project.
-retry gcloud pubsub topics add-iam-policy-binding frames-ready --project="$PROJECT_ID" \
-  --member="serviceAccount:$PROCESS_UPLOAD" --role=roles/pubsub.publisher >/dev/null
+# Publisher on the one topic it uses, not on the project. A topic's own policy needs Owner or Pub/Sub
+# Admin (Editor and Project IAM Admin can't change it), so without them this warns and carries on.
+FRAMES_GRANT="gcloud pubsub topics add-iam-policy-binding frames-ready --project=$PROJECT_ID \
+--member=serviceAccount:$PROCESS_UPLOAD --role=roles/pubsub.publisher"
+$FRAMES_GRANT >/dev/null 2>&1 ||
+  echo "Couldn't grant process-upload publish on frames-ready: ask a project Owner to run: $FRAMES_GRANT" >&2
 
 # The upload trigger: Cloud Storage publishes each event to Pub/Sub through its service agent (one grant
 # covers every storage trigger in the project, member 3's too), and Eventarc delivers it to the function
@@ -83,9 +86,10 @@ retry gcloud pubsub topics add-iam-policy-binding frames-ready --project="$PROJE
 # project IAM took over an hour to accept it (27 Oct), so this grant warns instead of stopping the script.
 # IAM can still reject it after the grant exists, so it's skipped once the grant is there.
 STORAGE_AGENT=$(gcloud storage service-agent --project="$PROJECT_ID")
+# The member is matched with grep: gcloud's --filter no longer matches values with a colon in them.
 has_project_role() {
   gcloud projects get-iam-policy "$PROJECT_ID" --flatten="bindings[].members" \
-    --filter="bindings.role=$2 AND bindings.members=$1" --format="value(bindings.role)" | grep -q .
+    --filter="bindings.role=$2" --format="value(bindings.members)" | grep -qxF "$1"
 }
 has_project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher ||
   project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher 2>/dev/null ||
