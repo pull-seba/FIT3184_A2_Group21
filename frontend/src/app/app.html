@@ -6,5 +6,10 @@
       <button type="button" (click)="signOut()">Sign out</button>
     </span>
   </header>
+  <nav class="pages" aria-label="Pages">
+    @for (page of pages; track page.path) {
+      <a [routerLink]="page.path" routerLinkActive="active" ariaCurrentWhenActive="page">{{ page.title }}</a>
+    }
+  </nav>
 }
 <router-outlet />
