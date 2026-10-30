@@ -1,0 +1,141 @@
+filename,species,true_count,condition,predicted,hit,count_ok,count_own,count_borrowed,false_tags,to_fallback,top_labels
+fox/fox_001.jpg,fox,1,clear,fox:1,True,True,1,1,,False,Animal 100; Canine 100; Fox 100; Kit Fox 100; Mammal 100
+fox/fox_002.jpg,fox,1,night,,False,False,0,0,,True,Animal 90; Coyote 90; Mammal 90; Deer 88; Wildlife 88
+fox/fox_003.jpg,fox,1,night,fox:1,True,True,1,1,,False,Animal 98; Canine 98; Fox 98; Kit Fox 98; Mammal 98
+fox/fox_004.jpg,fox,1,other,,False,False,0,0,,True,Plant 99; Vegetation 99; Tree 97; Grass 94; Animal 93
+fox/fox_005.jpg,fox,1,other,,False,False,0,0,,True,Soil 100; Animal 85; Mammal 84; Bird 78; Wildlife 73
+fox/fox_006.jpg,fox,1,other,,False,False,0,0,,True,Countryside 100; Farm 100; Field 100; Grassland 100; Nature 100
+fox/fox_007.jpg,fox,1,other,,False,False,0,0,,False,Road 100; Tarmac 100; Gravel 98; City 93; Street 93
+fox/fox_008.jpg,fox,1,other,,False,False,0,0,,False,Architecture 100; Building 100; Outdoors 100; Shelter 100; Grass 99
+fox/fox_009.jpg,fox,1,other,,False,False,0,0,,True,Animal 100; Zoo 100; Plant 91; Vegetation 91; Mammal 79
+fox/fox_010.jpg,fox,1,other,fox:1,True,True,1,1,,False,Animal 100; Canine 100; Fox 100; Kit Fox 100; Mammal 100
+fox/fox_011.jpg,fox,1,night,dog:1,False,False,0,0,dog,False,Animal 100; Coyote 100; Mammal 100; Plant 97; Vegetation 97
+fox/fox_012.jpg,fox,1,clear,dog:1;fox:1,True,True,1,1,dog,False,Animal 98; Canine 98; Dog 98; Mammal 98; Pet 98
+fox/fox_013.jpg,fox,1,night,feral pig:1;fox:1,True,True,1,1,feral pig,False,Animal 100; Mammal 100; Pig 100; Canine 93; Fox 93
+fox/fox_014.jpg,fox,1,clear,fox:1,True,True,1,1,,False,Animal 97; Mammal 95; Fox 95; Wildlife 95; Canine 93
+fox/fox_015.jpg,fox,1,night,fox:1,True,True,1,1,,False,Animal 100; Canine 100; Fox 100; Kit Fox 100; Mammal 100
+fox/fox_016.jpg,fox,1,night,fox:1,True,True,1,1,,False,Animal 98; Canine 98; Fox 98; Kit Fox 98; Mammal 98
+fox/fox_018.jpg,fox,1,other,,False,False,0,0,,True,Soil 97; Gravel 88; Road 88; Animal 72; Bird 72
+cat/cat_001.jpg,cat,1,other,,False,False,0,0,,False,Tin 98; Can 94; Trash Can 92; Road 57; Handrail 55
+cat/cat_002.jpg,cat,1,night,,False,False,0,0,,True,Nature 95; Night 95; Outdoors 95; Animal 87; Coyote 87
+cat/cat_003.jpeg,cat,1,clear,cat:1,True,True,1,1,,False,Box 99; Animal 98; Cat 98; Mammal 98; Pet 98
+cat/cat_005.jpg,cat,1,clear,cat:1,True,True,1,1,,False,Soil 100; Grass 99; Plant 99; Animal 97; Cat 97
+cat/cat_006.jpg,cat,1,night,,False,False,0,0,,True,Outdoors 92; Animal 88; Mammal 88; Nature 84; Canine 72
+cat/cat_007.jpg,cat,1,other,cat:1,True,True,1,1,,False,Animal 92; Cat 91; Mammal 91; Pet 91; Wildlife 90
+cat/cat_008.jpeg,cat,1,other,,False,False,0,0,,False,Rubble 100; Nature 100; Outdoors 100; Pond 100; Water 100
+cat/cat_009.jpg,cat,1,other,cat:1,True,True,1,1,,False,Road 100; Tarmac 100; Animal 97; Cat 97; Mammal 97
+cat/cat_010.jpg,cat,1,clear,cat:1,True,True,1,1,,False,Grass 100; Plant 100; Backyard 100; Nature 100; Outdoors 100
+cat/cat_011.jpeg,cat,1,other,,False,False,0,0,,True,Nature 100; Outdoors 100; Weather 100; Night 100; Fog 58
+cat/cat_012.jpg,cat,1,clear,cat:1,True,True,1,1,,False,Gravel 100; Road 100; Soil 95; Animal 94; Cat 94
+cat/cat_013.jpg,cat,2,night,dog:1;cat:1,True,False,1,1,dog,False,City 100; Road 100; Street 100; Urban 100; Fence 100
+cat/cat_015.jpg,cat,1,other,,False,False,0,0,,False,Outdoors 100; Nature 98; Weather 87; Head 77; Person 77
+cat/cat_016.jpg,cat,1,clear,cat:1,True,True,1,1,,False,Animal 98; Cat 98; Mammal 98; Pet 98; Manx 97
+cat/cat_017.jpg,cat,1,clear,cat:1,True,True,1,1,,False,Animal 98; Cat 98; Mammal 98; Pet 98; Angora 91
+cat/cat_018.jpg,cat,1,night,,False,False,0,0,,True,Baby 99; Person 99; Outdoors 82; Head 76; Animal 75
+dog/dog_001.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Beach 100; Coast 100; Nature 100; Outdoors 100; Sea 100
+dog/dog_002.jpg,dog,1,other,dog:1,True,True,1,1,,False,Animal 98; Canine 98; Dog 98; Mammal 98; Pet 98
+dog/dog_003.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Animal 99; Canine 99; Dog 99; Mammal 99; Pet 99
+dog/dog_004.jpg,dog,1,other,,False,False,0,0,,True,Animal 100; Coyote 100; Mammal 100; Pig 91; Wolf 57
+dog/dog_005.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Handrail 99; Animal 99; Canine 99; Dog 99; Mammal 99
+dog/dog_007.jpg,dog,1,clear,dog:1;fox:1,True,True,1,1,fox,False,Animal 98; Canine 98; Dog 98; Mammal 98; Pet 98
+dog/dog_008.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Animal 100; Canine 100; Mammal 100; Red Wolf 100; Wolf 100
+dog/dog_009.jpg,dog,1,other,dog:1,True,True,1,1,,False,Couch 100; Furniture 100; Architecture 100; Building 100; Indoors 100
+dog/dog_010.jpg,dog,1,other,dog:1,True,True,1,1,,False,Plant 100; Vegetation 100; Animal 97; Canine 97; Dog 97
+dog/dog_011.jpg,dog,1,other,,False,False,0,0,,True,Grass 98; Plant 98; Animal 95; Coyote 95; Mammal 95
+dog/dog_012.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Animal 97; Canine 97; Dog 97; Mammal 97; Pet 97
+dog/dog_013.jpg,dog,2,clear,dog:1,True,False,1,1,,False,Animal 96; Reptile 96; Sea Life 96; Turtle 96; Canine 96
+dog/dog_014.jpg,dog,1,other,dog:1,True,True,1,1,,False,Plant 100; Vegetation 100; Grove 100; Land 100; Nature 100
+dog/dog_015.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Floor 100; Flooring 100; Animal 99; Canine 99; Dog 99
+dog/dog_016.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Animal 99; Canine 99; Dog 99; Mammal 99; Pet 99
+dog/dog_017.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Animal 100; Coyote 100; Mammal 100; Canine 99; Dog 99
+dog/dog_018.jpg,dog,1,clear,dog:1,True,True,1,1,,False,Animal 99; Canine 99; Dog 99; Mammal 99; Pet 99
+rabbit/rabbit_001.jpg,rabbit,1,other,rabbit:1,True,True,1,1,,False,Grass 100; Plant 100; Animal 99; Mammal 99; Rabbit 99
+rabbit/rabbit_002.jpg,rabbit,1,clear,rabbit:1,True,True,1,2,,False,Animal 100; Mammal 100; Rabbit 100; Grass 100; Plant 100
+rabbit/rabbit_003.jpg,rabbit,1,clear,rabbit:1,True,True,1,1,,False,Animal 99; Mammal 99; Rabbit 99; Grass 92; Plant 92
+rabbit/rabbit_004.jpg,rabbit,1,other,,False,False,0,0,,True,Clothing 100; Footwear 100; Shoe 100; Sneaker 100; Soil 99
+rabbit/rabbit_005.jpeg,rabbit,1,other,,False,False,0,0,,True,Animal 100; Bird 100; Blackbird 100; Plant 99; Vegetation 99
+rabbit/rabbit_006.jpg,rabbit,1,other,rabbit:1,True,True,1,1,,False,Animal 95; Mammal 95; Rabbit 95; Rodent 90; Bird 86
+rabbit/rabbit_008.jpg,rabbit,1,other,rabbit:1,True,True,1,1,,False,Animal 97; Hare 97; Mammal 97; Rodent 97; Rabbit 95
+rabbit/rabbit_009.jpg,rabbit,1,other,rabbit:1,True,True,1,1,,False,Animal 100; Mammal 100; Rabbit 100; Field 95; Grassland 95
+rabbit/rabbit_010.jpg,rabbit,1,clear,rabbit:1,True,True,1,1,,False,Animal 99; Mammal 99; Rabbit 99; Hare 91; Rodent 91
+rabbit/rabbit_011.jpg,rabbit,1,other,rabbit:1,True,True,1,1,,False,Animal 99; Mammal 99; Rabbit 99; Kangaroo 82; Plant 74
+rabbit/rabbit_013.jpeg,rabbit,1,other,rabbit:1,True,True,1,1,,False,Animal 99; Hare 99; Mammal 99; Rodent 99; Rabbit 94
+rabbit/rabbit_014.jpg,rabbit,1,other,,False,False,0,0,,True,Animal 98; Hare 98; Mammal 98; Rodent 98; Plant 87
+rabbit/rabbit_015.jpg,rabbit,1,clear,rabbit:1,True,True,1,1,,False,Animal 99; Mammal 99; Rabbit 99; Person 86; Rat 84
+rabbit/rabbit_016.jpg,rabbit,1,clear,rabbit:1,True,True,1,1,,False,Animal 100; Hare 100; Mammal 100; Rodent 100; Rabbit 97
+rabbit/rabbit_017.jpg,rabbit,1,clear,rabbit:1,True,True,1,1,,False,Animal 100; Hare 100; Mammal 100; Rodent 100; Rat 99
+rabbit/rabbit_018.jpeg,rabbit,2,other,rabbit:1,True,False,1,1,,False,Animal 99; Hare 99; Mammal 99; Rodent 99; Rabbit 97
+feral_pig/feral_pig_001.jpg,feral pig,4,other,feral pig:2,True,False,2,2,,False,Animal 99; Mammal 99; Pig 99; Bear 96; Wildlife 96
+feral_pig/feral_pig_002.jpg,feral pig,2,other,feral pig:1,True,False,1,2,,False,Animal 100; Boar 100; Hog 100; Mammal 100; Pig 100
+feral_pig/feral_pig_003.jpg,feral pig,1,clear,feral pig:1,True,True,1,1,,False,Animal 100; Zoo 100; Plant 100; Vegetation 100; Nature 99
+feral_pig/feral_pig_004.jpg,feral pig,2,clear,feral pig:2,True,True,2,2,,False,Animal 100; Mammal 100; Pig 100; Boar 100; Hog 100
+feral_pig/feral_pig_005.jpg,feral pig,1,other,feral pig:1,True,True,1,1,,False,Soil 100; Field 100; Grassland 100; Nature 100; Outdoors 100
+feral_pig/feral_pig_006.jpg,feral pig,1,night,feral pig:1,True,True,1,1,,False,Animal 100; Boar 100; Hog 100; Mammal 100; Pig 100
+feral_pig/feral_pig_007.jpg,feral pig,1,other,,False,False,0,0,,True,Jungle 100; Nature 100; Outdoors 100; Plant 100; Vegetation 100
+feral_pig/feral_pig_009.jpg,feral pig,2,night,feral pig:1,True,False,1,2,,False,Animal 100; Boar 100; Hog 100; Mammal 100; Pig 100
+feral_pig/feral_pig_010.jpg,feral pig,1,other,feral pig:1,True,True,1,1,,False,Plant 100; Vegetation 100; Soil 100; Grove 100; Land 100
+feral_pig/feral_pig_011.jpg,feral pig,1,other,feral pig:1,True,True,1,1,,False,Plant 100; Vegetation 100; Rock 99; Animal 99; Boar 99
+feral_pig/feral_pig_012.jpg,feral pig,1,other,,False,False,0,0,,False,Clothing 100; Glove 100; Footwear 100; Shoe 100; Wood 100
+feral_pig/feral_pig_013.jpg,feral pig,1,other,feral pig:1,True,True,1,1,,False,Animal 100; Boar 100; Hog 100; Mammal 100; Pig 100
+feral_pig/feral_pig_014.jpg,feral pig,1,clear,,False,False,0,0,,True,Plant 100; Vegetation 100; Land 99; Nature 99; Outdoors 99
+feral_pig/feral_pig_015.jpeg,feral pig,1,clear,,False,False,0,0,,False,Jungle 100; Nature 100; Outdoors 100; Plant 100; Vegetation 100
+feral_pig/feral_pig_016.jpg,feral pig,1,other,,False,False,0,0,,True,Plant 100; Vegetation 100; Animal 99; Zoo 99; Soil 91
+feral_pig/feral_pig_017.jpg,feral pig,1,other,,False,False,0,0,,True,Plant 100; Tree 100; Tree Stump 100; Animal 84; Canine 84
+feral_pig/feral_pig_018.jpg,feral pig,1,clear,feral pig:1,True,True,1,1,,False,Animal 100; Boar 100; Hog 100; Mammal 100; Pig 100
+cane_toad/cane_toad_001.jpg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 94; Wildlife 94; Amphibian 92; Toad 92; Frog 89
+cane_toad/cane_toad_002.jpeg,cane toad,1,other,cane toad:1,True,True,1,1,,False,Animal 98; Lizard 98; Reptile 98; Amphibian 96; Toad 96
+cane_toad/cane_toad_003.jpeg,cane toad,1,clear,,False,False,0,0,,True,Amphibian 99; Animal 99; Frog 99; Wildlife 99; Insect 95
+cane_toad/cane_toad_004.jpg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 99; Lizard 99; Reptile 99; Wildlife 99; Amphibian 96
+cane_toad/cane_toad_005.jpg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Amphibian 98; Animal 98; Toad 98; Wildlife 98; Frog 87
+cane_toad/cane_toad_006.jpg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 99; Wildlife 99; Amphibian 96; Toad 96; Lizard 92
+cane_toad/cane_toad_007.jpg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 98; Wildlife 98; Lizard 97; Reptile 97; Amphibian 97
+cane_toad/cane_toad_008.jpg,cane toad,1,other,cane toad:1,True,True,1,1,,False,Body Part 100; Finger 100; Hand 100; Person 100; Grass 98
+cane_toad/cane_toad_009.jpeg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Soil 100; Clothing 97; Footwear 97; Sandal 97; Amphibian 95
+cane_toad/cane_toad_010.jpg,cane toad,1,other,cane toad:1,True,True,1,1,,False,Amphibian 94; Animal 94; Toad 94; Wildlife 94; Reptile 92
+cane_toad/cane_toad_011.jpeg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 99; Wildlife 99; Amphibian 98; Frog 98; Insect 97
+cane_toad/cane_toad_012.jpeg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 99; Lizard 99; Reptile 99; Wildlife 99; Amphibian 97
+cane_toad/cane_toad_013.jpeg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Amphibian 99; Animal 99; Toad 99; Wildlife 99; Reptile 96
+cane_toad/cane_toad_014.jpg,cane toad,1,other,cane toad:1,True,True,1,1,,False,Amphibian 90; Animal 90; Frog 90; Wildlife 90; Bird 90
+cane_toad/cane_toad_015.jpeg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 99; Wildlife 99; Amphibian 96; Toad 96; Frog 85
+cane_toad/cane_toad_016.jpg,cane toad,1,other,,False,False,0,0,,False,Plant 100; Tree 100; Wood 100; Soil 100; Tree Stump 92
+cane_toad/cane_toad_018.jpeg,cane toad,1,clear,cane toad:1,True,True,1,1,,False,Animal 98; Wildlife 98; Amphibian 95; Toad 95; Plant 95
+neg_kangaroo/neg_kangaroo_001.jpg,none,0,other,,False,False,0,0,,True,Plant 100; Tree 100; Tree Trunk 100; Field 100; Grassland 100
+neg_kangaroo/neg_kangaroo_002.jpg,none,0,clear,,False,False,0,0,,False,Animal 97; Kangaroo 97; Mammal 97; Nature 82; Outdoors 82
+neg_kangaroo/neg_kangaroo_003.jpg,none,0,other,,False,False,0,0,,True,Plant 100; Tree 100; Vegetation 100; Land 99; Nature 99
+neg_kangaroo/neg_kangaroo_004.jpg,none,0,other,,False,False,0,0,,True,Animal 100; Zoo 100; Bear 86; Mammal 86; Wildlife 86
+neg_kangaroo/neg_kangaroo_005.jpg,none,0,clear,,False,False,0,0,,False,Animal 97; Mammal 97; Kangaroo 95; Wildlife 56; Deer 54
+neg_kangaroo/neg_kangaroo_006.jpg,none,0,other,,False,False,0,0,,True,Field 99; Grassland 99; Nature 99; Outdoors 99; Animal 99
+neg_kangaroo/neg_kangaroo_007.jpg,none,0,clear,,False,False,0,0,,False,Animal 97; Mammal 97; Kangaroo 96; Plant 78; Tree 78
+neg_kangaroo/neg_kangaroo_008.jpg,none,0,other,,False,False,0,0,,False,Nature 100; Outdoors 100; Field 99; Grassland 99; Countryside 98
+neg_wombat/neg_wombat_001.jpg,none,0,clear,,False,False,0,0,,True,Plant 96; Vegetation 96; Animal 90; Mammal 90; Grass 80
+neg_wombat/neg_wombat_002.jpg,none,0,clear,feral pig:1,False,False,0,0,feral pig,False,Animal 100; Boar 100; Hog 100; Mammal 100; Pig 100
+neg_wombat/neg_wombat_003.png,none,0,clear,,False,False,0,0,,True,Field Hockey 94; Field Hockey Stick 94; Hockey 94; Sport 94; Animal 90
+neg_wombat/neg_wombat_004.jpg,none,0,other,,False,False,0,0,,True,Road 100; Tarmac 100; Road Sign 86; Sign 86; Symbol 86
+neg_wombat/neg_wombat_005.jpg,none,0,night,feral pig:1,False,False,0,0,feral pig,False,Animal 99; Mammal 99; Pig 99; Outdoors 90; Nature 74
+neg_wombat/neg_wombat_006.jpg,none,0,clear,,False,False,0,0,,True,Animal 100; Bear 100; Mammal 100; Wildlife 100; Rodent 98
+neg_wombat/neg_wombat_007.jpg,none,0,clear,,False,False,0,0,,False,Grass 97; Plant 97; Animal 93; Mammal 93; Rat 93
+neg_wombat/neg_wombat_008.jpg,none,0,other,feral pig:1,False,False,0,0,feral pig,False,Grass 99; Plant 99; Vegetation 99; Animal 97; Mammal 97
+neg_green_tree_frog/neg_green_tree_frog_001.jpg,none,0,clear,,False,False,0,0,,True,Amphibian 100; Animal 100; Frog 100; Wildlife 100; Insect 99
+neg_green_tree_frog/neg_green_tree_frog_002.jpg,none,0,clear,,False,False,0,0,,True,Amphibian 100; Animal 100; Frog 100; Wildlife 100; Insect 96
+neg_green_tree_frog/neg_green_tree_frog_003.jpeg,none,0,clear,,False,False,0,0,,True,Amphibian 100; Animal 100; Frog 100; Wildlife 100; Fish 96
+neg_green_tree_frog/neg_green_tree_frog_004.jpg,none,0,clear,,False,False,0,0,,True,Amphibian 100; Animal 100; Frog 100; Wildlife 100; Lizard 84
+neg_green_tree_frog/neg_green_tree_frog_005.jpg,none,0,clear,,False,False,0,0,,True,Machine 94; Wheel 94; Amphibian 91; Animal 91; Frog 91
+neg_green_tree_frog/neg_green_tree_frog_006.jpeg,none,0,clear,,False,False,0,0,,True,Plant 100; Amphibian 100; Animal 100; Frog 100; Wildlife 100
+neg_green_tree_frog/neg_green_tree_frog_007.jpeg,none,0,other,,False,False,0,0,,True,Fence 99; Amphibian 93; Animal 93; Frog 93; Wildlife 93
+neg_green_tree_frog/neg_green_tree_frog_008.jpg,none,0,other,,False,False,0,0,,True,Amphibian 100; Animal 100; Frog 100; Wildlife 100; Insect 78
+neg_hare/neg_hare_001.jpeg,none,0,clear,,False,False,0,0,,True,Animal 100; Hare 100; Mammal 100; Rodent 100; Kangaroo 92
+neg_hare/neg_hare_002.jpg,none,0,other,,False,False,0,0,,True,Grass 100; Plant 100; Animal 100; Hare 100; Mammal 100
+neg_hare/neg_hare_003.jpg,none,0,other,,False,False,0,0,,True,Animal 100; Hare 100; Mammal 100; Rodent 100; Kangaroo 92
+neg_hare/neg_hare_004.jpg,none,0,other,,False,False,0,0,,True,Plant 100; Vegetation 100; Animal 97; Kangaroo 97; Mammal 97
+neg_hare/neg_hare_005.jpg,none,0,other,,False,False,0,0,,True,Animal 100; Hare 100; Mammal 100; Rodent 100; Bird 98
+neg_hare/neg_hare_006.jpeg,none,0,clear,,False,False,0,0,,True,Animal 100; Hare 100; Mammal 100; Rodent 100; Rat 96
+neg_hare/neg_hare_007.jpeg,none,0,other,,False,False,0,0,,True,Animal 100; Hare 100; Mammal 100; Rodent 100; Cat 88
+neg_hare/neg_hare_008.jpg,none,0,clear,rabbit:1,False,False,0,0,rabbit,False,Animal 100; Hare 100; Mammal 100; Rodent 100; Rabbit 96
+fox/fox_019.jpg,fox,2,other,,False,False,0,0,,True,Animal 94; Wildlife 94; Mammal 91; Dinosaur 87; Reptile 87
+fox/fox_020.jpg,fox,2,night,fox:1,True,False,1,2,,False,Animal 100; Canine 100; Fox 100; Kit Fox 100; Mammal 100
+fox/fox_021.jpg,fox,2,other,fox:1,True,False,1,2,,False,Animal 100; Canine 100; Fox 100; Kit Fox 100; Mammal 100
+cane_toad/cane_toad_019.jpg,cane toad,3,other,cane toad:1,True,False,1,1,,False,Animal 95; Wildlife 95; Amphibian 86; Toad 81; Frog 79
+cane_toad/cane_toad_020.jpg,cane toad,6,other,cane toad:1,True,False,1,2,,False,Animal 95; Wildlife 95; Amphibian 94; Toad 94; Lizard 85
+cane_toad/cane_toad_021.jpg,cane toad,2,clear,cane toad:1,True,False,1,1,,False,Animal 99; Lizard 99; Reptile 99; Wildlife 98; Amphibian 97
+rabbit/rabbit_019.jpg,rabbit,12,other,,False,False,0,0,,True,Animal 95; Kangaroo 95; Mammal 95; Bird 93; Outdoors 76
+rabbit/rabbit_020.jpg,rabbit,11,other,rabbit:1,True,False,1,7,,False,Animal 97; Mammal 97; Rabbit 97; Kangaroo 94; Rat 91

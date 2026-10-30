@@ -54,7 +54,8 @@ Firestore vector search needs one vector per document, so each detected pet gets
 | `species` | `"cat"` or `"dog"` | 3 tagging | From `lost_pet_species` in `shared/tags.json` |
 | `colour` | string or null | 3 tagging | For example "ginger", "black", "tabby" |
 | `breed` | string or null | 3 tagging | When the model provides one |
-| `embedding` | Firestore `Vector` | 3 tagging | Image embedding of the pet's crop; dimension set by the embedding model |
+| `embedding` | Firestore `Vector` | 3 tagging | Image embedding of the pet's crop: 1408 numbers from Vertex AI `multimodalembedding@001` |
+| `embedding_model` | string | 3 tagging | The model that made `embedding`. Vectors from different models can't be compared, so a model change means re-embedding |
 | `bbox` | array of 4 numbers | 3 tagging | `[x, y, width, height]`, each 0 to 1 |
 | `frame_index` | integer or null | 3 tagging | Videos only |
 | `uploaded_at` | timestamp | 3 tagging | Copied from the file, so searches can filter by date |
@@ -66,6 +67,25 @@ Firestore vector search needs one vector per document, so each detected pet gets
 ## `config/model`: the active models, so models change without code changes (rubric 2.1.3)
 
 Owner: member 3. Holds the detector name, weights location and version, confidence threshold, any chained classifier, and the embedding model. The tagging service reads it on start-up and re-reads it every few minutes.
+
+The source of truth is `functions/ml/config/model.json`; `functions/ml/config/push_model_config.py` writes it here.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `version` | string | Copied to `files.model_version` on every tagged file |
+| `detector` | string | `rekognition` |
+| `detector_region` | string | AWS region for the detector, `us-east-1` |
+| `request_min_confidence` | number | Lowest confidence asked for from the detector; per-tag thresholds are applied after |
+| `thresholds` | map of tag name to number | Per-tag minimum confidence (0-100), from the bake-off in `tools/testset` |
+| `default_threshold` | number | For a tag missing from `thresholds` |
+| `box_min_confidence` | number | A box counts towards a tag's count once its label passes the threshold and the box is at least this confident |
+| `borrow_boxes` | boolean | When a tag has no boxes of its own, count the boxes on another animal label in the photo |
+| `label_map_version` | integer | The `shared/tags.json` version these thresholds were chosen for |
+| `chained_classifier` | string or null | None for now |
+| `embedding_model` | string | `multimodalembedding@001` |
+| `embedding_dimension` | integer | 1408 (Firestore vector indexes allow up to 2048) |
+| `embedding_location` | string | Vertex AI region for the embedding call |
+| `updated_at` | timestamp | Set by the push script |
 
 ## `subscriptions/{user_sub}`: tag alert preferences
 

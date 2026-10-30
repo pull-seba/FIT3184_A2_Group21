@@ -1,0 +1,22 @@
+{
+  "version": "2026-10-29.1",
+  "detector": "rekognition",
+  "detector_region": "us-east-1",
+  "request_min_confidence": 50,
+  "thresholds": {
+    "cane toad": 70,
+    "cat": 90,
+    "dog": 95,
+    "feral pig": 95,
+    "fox": 90,
+    "rabbit": 90
+  },
+  "default_threshold": 95,
+  "box_min_confidence": 50,
+  "borrow_boxes": true,
+  "label_map_version": 2,
+  "chained_classifier": null,
+  "embedding_model": "multimodalembedding@001",
+  "embedding_dimension": 1408,
+  "embedding_location": "us-east1"
+}
