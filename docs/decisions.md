@@ -25,6 +25,7 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | One `sightings` document per detected cat or dog (28 Oct) | Firestore vector search needs one vector per document |
 | Tagging uses Amazon Rekognition `DetectLabels` in AWS `us-east-1` as the first model, replacing the planned detector container (29 Oct, agreed in the team chat) | Rekognition names our species directly (fox, toad, pig, rabbit), where stock YOLO or MegaDetector would need a second species model. `us-east-1` is the closest AWS region to our GCP compute in `us-east1`, and Rekognition keeps no state, so it needn't share a region with other AWS services. Images are sent for analysis only and never stored on AWS |
 | Counts come from Rekognition's boxes; when a tag has no boxes of its own, it borrows the boxes Rekognition put on another animal label in the same photo. No MegaDetector (29 Oct) | Bake-off on 140 photos (`tools/testset`): photos with 2+ animals get a count of 2+ for pigs 100%, foxes 67%, toads 33% and rabbits 33% with borrowing (0-50% without), with one over-count. Rubric 2.1.3 accepts Rekognition alone; a counting model can be added later through `config/model`. Toad groups are undercounted, a known limitation |
+| Lost pet embeddings use Vertex AI `multimodalembedding@001`, 1408 numbers (29 Oct) | Images and text share one embedding space, so the same model serves search by photo and by description ("ginger cat") for the page and the chatbot. Same cloud as Firestore vector search, so it doesn't depend on the AWS federation. Chosen over CLIP (a 1-2 GB container), Titan Multimodal (would also need the federated AWS role) and Gemini Embedding 2 (3072 numbers by default, over Firestore's limit) |
 
 ## Proposed (confirm by the date shown)
 
@@ -43,7 +44,6 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Question | Owner | Decide by | Options |
 | --- | --- | --- | --- |
 | How the Lex fulfilment Lambda authenticates to the GCP gateway | 1, 4 | Wed 28 Oct | Forward the user's ID token in Lex session attributes (simplest), or Workload Identity Federation with a separate gateway audience |
-| Embedding model for lost pet search | 3 | Tue 27 Oct | CLIP in the tagging container (free, larger image) or Vertex AI multimodal embeddings (managed, billed per call) |
 | Cognito's temporary password step | 1 | Tue 27 Oct | The spec asks for email verification and a temporary password change, but self sign-up gives no temporary password; admin-created users do. Ask on Ed, or create users through `AdminCreateUser` from the sign-up page |
 | Where the notification subscriptions API runs | 1 | Wed 28 Oct | A GCP function calling AWS through federation, or an AWS Lambda behind the GCP gateway |
 | Who owns the team report, architecture diagram and user guide | All | Tue 27 Oct | Lighter loads: members 1 and 2 |
