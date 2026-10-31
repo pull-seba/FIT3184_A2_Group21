@@ -233,15 +233,8 @@ def handler(event, context):
         messages = [text(SIGN_IN_AGAIN)]
     except Exception as exc:
         # The user gets a sentence instead of a Lex error, whatever went wrong.
-        print(
-            json.dumps(
-                {
-                    "level": "ERROR",
-                    "message": f"{intent['name']} failed: "
-                    f"{type(exc).__name__}: {exc}",
-                }
-            )
-        )
+        message = f"{intent['name']} failed: {exc!r}"
+        print(json.dumps({"level": "ERROR", "message": message}))
         messages = [text(TRY_AGAIN)]
     return {
         "sessionState": {
