@@ -78,6 +78,9 @@ Response, one result per URL in the same order:
 { "results": [ { "url": "...", "file_id": "<64 hex>", "status": "deleted" }, { "url": "...", "file_id": null, "status": "not_found" } ] }
 ```
 `status` is `deleted`, `not_found` or `error` (with `detail`). Deleting removes the original, thumbnail, frames, sightings and the `files` document.
+- Only the file's uploader can delete it (its `uploaded_by` is the caller's `sub`). Anyone else gets `error` with detail `You can only delete files you uploaded`, and the file is left as it was.
+- A URL that isn't one of our files gets `not_found` with `file_id: null`. A file that has no record, because it was never uploaded or is already deleted, gets `not_found` with its `file_id`.
+- 1 to 100 URLs per request; otherwise `400`.
 
 ### `POST /search/tags` (member 4)
 Body is the tag query from the spec: tag name to minimum count, combined with AND.
