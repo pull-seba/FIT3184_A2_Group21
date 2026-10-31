@@ -15,7 +15,7 @@ Gives every upload species tags with counts, written to `files/<sha256>`: `tags`
 
 Idempotent: a repeat event for a file already tagged by the current `config/model` version does nothing. An image Rekognition or Pillow can't read gets `pipeline.tagging: "failed"` and isn't retried. Any other error is raised, so the event is retried.
 
-Not yet: lost pet `sightings` (cat and dog crops with Vertex AI embeddings). `detect.analyse` already returns the boxes they need.
+Not yet: lost pet `sightings` (cat and dog crops with Vertex AI embeddings).
 
 ## Triggers
 Two functions deploy from this folder (`docs/contracts/events.md`):

@@ -20,17 +20,7 @@ RESPONSE = {
         {
             "Name": "Fox",
             "Confidence": 96.5,
-            "Instances": [
-                {
-                    "Confidence": 95.1,
-                    "BoundingBox": {
-                        "Left": 0.1,
-                        "Top": 0.2,
-                        "Width": 0.3,
-                        "Height": 0.4,
-                    },
-                }
-            ],
+            "Instances": [{"Confidence": 95.1}],
             "Parents": [{"Name": "Animal"}, {"Name": "Mammal"}],
         },
         {"Name": "Grass", "Confidence": 80.0, "Instances": [], "Parents": []},
@@ -43,7 +33,7 @@ def no_cached_clients(monkeypatch):
     monkeypatch.setattr(rekognition, "_clients", {})
 
 
-def test_labels_keep_the_bake_off_shape_plus_box_positions(monkeypatch):
+def test_labels_keep_the_bake_off_shape(monkeypatch):
     client = mock.Mock()
     client.detect_labels.return_value = RESPONSE
     monkeypatch.setattr(rekognition, "client", lambda region: client)
@@ -54,10 +44,9 @@ def test_labels_keep_the_bake_off_shape_plus_box_positions(monkeypatch):
         "name": "Fox",
         "confidence": 96.5,
         "instances": [95.1],
-        "boxes": [[0.1, 0.2, 0.3, 0.4]],
         "parents": ["Animal", "Mammal"],
     }
-    assert labels[1]["instances"] == [] and labels[1]["boxes"] == []
+    assert labels[1]["instances"] == []
     client.detect_labels.assert_called_once_with(
         Image={"Bytes": b"jpeg"},
         MaxLabels=100,

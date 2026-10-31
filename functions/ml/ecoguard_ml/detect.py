@@ -124,9 +124,8 @@ def count_tags(
 
 
 def analyse(data: bytes, config: dict) -> tuple[dict[str, int], list[dict]]:
-    """Tags for one image's bytes, plus the detector's labels (with boxes),
-    which lost pet sightings need. Nothing is stored: search_by_file uses
-    this on query photos too."""
+    """Tags for one image's bytes, plus the detector's labels. Nothing is
+    stored: search_by_file uses this on query photos too."""
     detector = DETECTORS.get(config["detector"])
     if detector is None:
         raise ValueError(
