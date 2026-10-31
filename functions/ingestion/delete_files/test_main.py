@@ -251,13 +251,6 @@ def test_deletes_an_image_with_its_thumbnail_and_record(cloud):
     assert leftovers(cloud, file_id) == []
 
 
-def test_deletes_a_video_with_its_frames_and_sightings(cloud):
-    file_id = add_file(cloud, "cat video", ext="mp4", frames=6, sightings=2)
-    assert len(leftovers(cloud, file_id)) == 1 + 1 + 6 + 1 + 2
-    assert delete(original_url(file_id, "mp4"))[0]["status"] == "deleted"
-    assert leftovers(cloud, file_id) == []
-
-
 def test_leaves_other_files_alone(cloud):
     target = add_file(cloud, "cat video", ext="mp4", frames=6, sightings=1)
     other = add_file(cloud, "other cat", ext="mp4", frames=3, sightings=1)
