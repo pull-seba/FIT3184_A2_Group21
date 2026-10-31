@@ -1,13 +1,9 @@
 import base64
 import json
-import sys
 from unittest import mock
 
 import flask
 import pytest
-
-# Stands in for member 2's URL helper: each test sets what it answers.
-sys.modules["ecoguard_common.urls"] = mock.Mock()
 
 with (
     mock.patch("google.cloud.firestore.Client"),
@@ -75,13 +71,6 @@ def clouds(monkeypatch):
     return db
 
 
-@pytest.fixture(autouse=True)
-def url_helper(monkeypatch):
-    helper = mock.Mock(return_value=FILE_ID)
-    monkeypatch.setattr(main, "file_id_from_url", helper)
-    return helper
-
-
 def firestore_returns(db, stored):
     document = db.collection.return_value.document
     document.return_value.get.return_value.to_dict.return_value = stored
@@ -112,12 +101,11 @@ def test_bad_input_is_400_before_firestore(clouds, json_body, data, code):
 
 
 @pytest.mark.parametrize("extension", ["jpg", "png", "webp"])
-def test_signed_thumbnail_url_gives_the_original(clouds, url_helper, extension):
+def test_signed_thumbnail_url_gives_the_original(clouds, extension):
     firestore_returns(clouds, record(f"{FILE_ID}.{extension}"))
     body, status = call({"thumbnail_url": SIGNED_THUMBNAIL_URL})
     assert status == 200
     assert body == {"file_id": FILE_ID, "file_type": "image", "url": SIGNED}
-    url_helper.assert_called_once_with(SIGNED_THUMBNAIL_URL)
     clouds.collection.return_value.document.assert_called_once_with(FILE_ID)
     main.gcs.bucket.assert_called_once_with("ecoguard-g21-media")
     assert signed_key() == f"{FILE_ID}.{extension}"
@@ -131,13 +119,15 @@ def test_video_poster_gives_the_video(clouds):
 
 
 @pytest.mark.parametrize(
-    "rejection",
-    [{"return_value": None}, {"side_effect": ValueError}],
-    ids=["returns None", "raises ValueError"],
+    "url",
+    [
+        "https://example.com/cat.jpg",
+        f"https://storage.googleapis.com/other-bucket/thumbs/{FILE_ID}.jpg",
+    ],
+    ids=["not cloud storage", "not our bucket"],
 )
-def test_url_that_is_not_ours_is_404(clouds, url_helper, rejection):
-    url_helper.configure_mock(**rejection)
-    body, status = call({"thumbnail_url": "https://example.com/cat.jpg"})
+def test_url_that_is_not_ours_is_404(clouds, url):
+    body, status = call({"thumbnail_url": url})
     assert (status, body["error"]["code"]) == (404, "not_found")
     clouds.collection.assert_not_called()
 
