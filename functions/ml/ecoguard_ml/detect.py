@@ -76,9 +76,7 @@ def animal_labels(labels: list[dict]) -> list[str]:
     ]
 
 
-def count_tags(
-    labels: list[dict], config: dict, label_map: dict[str, str] = LABEL_MAP
-) -> dict[str, int]:
+def count_tags(labels: list[dict], config: dict) -> dict[str, int]:
     """{tag: count} for one image from its detector labels.
 
     A label counts when it maps to a tag and its confidence reaches that
@@ -94,33 +92,25 @@ def count_tags(
     def boxes(label):
         return sum(1 for c in label["instances"] if c >= box_min)
 
-    tags = {}
     own_boxes = {}
     for label in labels:
-        tag = label_map.get(label["name"].lower())
-        if not tag:
-            continue  # unmapped labels are dropped
-        if label["confidence"] < thresholds.get(
-            tag, config["default_threshold"]
-        ):
-            continue
-        tags[tag] = max(tags.get(tag, 0), boxes(label) or 1)
-        own_boxes[tag] = max(own_boxes.get(tag, 0), boxes(label))
+        tag = LABEL_MAP.get(label["name"].lower())
+        threshold = thresholds.get(tag, config["default_threshold"])
+        if tag and label["confidence"] >= threshold:
+            own_boxes[tag] = max(own_boxes.get(tag, 0), boxes(label))
 
+    spare = 0
     if config["borrow_boxes"]:
         spare = max(
             (
                 boxes(label)
                 for label in labels
                 if "Animal" in label["parents"]
-                and label_map.get(label["name"].lower()) not in tags
+                and LABEL_MAP.get(label["name"].lower()) not in own_boxes
             ),
             default=0,
         )
-        for tag in tags:
-            if not own_boxes[tag] and spare:
-                tags[tag] = spare
-    return tags
+    return {tag: own or spare or 1 for tag, own in own_boxes.items()}
 
 
 def analyse(data: bytes, config: dict) -> tuple[dict[str, int], list[dict]]:
