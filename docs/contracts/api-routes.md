@@ -71,7 +71,7 @@ Returns a `FileSummary` plus `"pipeline": {"thumbnail": "done", "tagging": "done
 
 ### `POST /files/delete` (member 2)
 ```json
-{ "urls": ["<original, thumbnail or frame URL>", "..."] }
+{ "urls": ["<original or thumbnail URL>", "..."] }
 ```
 Response, one result per URL in the same order:
 ```json

@@ -14,13 +14,10 @@ DERIVED_BUCKET = "ecoguard-g21-derived"
 FILE_ID = r"(?P<file_id>[0-9a-f]{64})"
 EXTENSIONS = "|".join(extension for extension, _ in ACCEPTED.values())
 
-# Every key a file has, by bucket: the original, its thumbnail, its frames.
+# The keys we hand out URLs for, by bucket: the original and its thumbnail.
 KEYS = {
-    MEDIA_BUCKET: [rf"{FILE_ID}\.({EXTENSIONS})"],
-    DERIVED_BUCKET: [
-        rf"thumbs/{FILE_ID}\.jpg",
-        rf"frames/{FILE_ID}/[0-9]{{4}}\.jpg",
-    ],
+    MEDIA_BUCKET: rf"{FILE_ID}\.({EXTENSIONS})",
+    DERIVED_BUCKET: rf"thumbs/{FILE_ID}\.jpg",
 }
 
 
@@ -38,8 +35,7 @@ def file_id_from_url(url: str) -> str:
 
     if bucket not in KEYS:
         raise ValueError("not one of our buckets")
-    for pattern in KEYS[bucket]:
-        match = re.fullmatch(pattern, key)
-        if match:
-            return match["file_id"]
-    raise ValueError("not a key one of our files uses")
+    match = re.fullmatch(KEYS[bucket], key)
+    if not match:
+        raise ValueError("not a key one of our files uses")
+    return match["file_id"]

@@ -47,4 +47,4 @@ The media bucket allows `PUT` from the app's hosting origin and `http://localhos
 - `gs://<bucket>/<key>`
 - Signed or unsigned, URL-encoded or not
 
-It drops the query string, URL-decodes the key, rejects buckets that aren't ours, and returns the 64-character file ID from the key: `<file_id>.<ext>` in the media bucket, `thumbs/<file_id>.jpg` or `frames/<file_id>/<index>.jpg` in the derived bucket. Any other URL raises `ValueError`, whose message never repeats the URL, so a signed URL can't reach the logs. It works for originals, thumbnails and frames alike, so the thumbnail lookup (2.2.2), bulk tagging (2.3.1) and delete (2.3.2) all resolve URLs the same way.
+It drops the query string, URL-decodes the key, rejects buckets that aren't ours, and returns the 64-character file ID from the key: `<file_id>.<ext>` in the media bucket or `thumbs/<file_id>.jpg` in the derived bucket. Any other URL raises `ValueError`, whose message never repeats the URL, so a signed URL can't reach the logs. It works for originals and thumbnails alike, so the thumbnail lookup (2.2.2), bulk tagging (2.3.1) and delete (2.3.2) all resolve URLs the same way.

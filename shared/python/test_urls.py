@@ -39,11 +39,6 @@ def test_thumbnails_in_every_form():
         assert file_id_from_url(url) == FILE_ID
 
 
-def test_frames_give_their_files_id_not_the_frame_index():
-    for url in every_form(DERIVED, f"frames/{FILE_ID}/0003.jpg"):
-        assert file_id_from_url(url) == FILE_ID
-
-
 def test_signed_urls():
     thumbnail = f"https://storage.googleapis.com/{DERIVED}/thumbs/{FILE_ID}.jpg"
     assert file_id_from_url(thumbnail + SIGNATURE) == FILE_ID
@@ -52,8 +47,6 @@ def test_signed_urls():
 def test_url_encoded_keys():
     encoded = [
         f"https://storage.googleapis.com/{DERIVED}/thumbs%2F{FILE_ID}.jpg",
-        f"https://storage.googleapis.com/{DERIVED}%2Fframes%2F{FILE_ID}%2F0000.jpg",
-        f"gs://{DERIVED}/frames/{FILE_ID}%2F0001.jpg",
     ]
     for url in encoded:
         assert file_id_from_url(url) == FILE_ID
@@ -82,8 +75,6 @@ def test_surrounding_spaces_and_fragments_are_ignored():
         f"gs://{MEDIA}/thumbs/{FILE_ID}.jpg",
         f"gs://{DERIVED}/{FILE_ID}.jpg",
         f"gs://{DERIVED}/thumbs/{FILE_ID}.png",
-        f"gs://{DERIVED}/frames/{FILE_ID}/1.jpg",
-        f"gs://{DERIVED}/frames/{FILE_ID}.jpg",
         f"gs://{MEDIA}/{FILE_ID.upper()}.jpg",
         f"gs://{MEDIA}/{FILE_ID[:63]}.jpg",
         f"gs://{MEDIA}/uploads/{FILE_ID}.jpg",
