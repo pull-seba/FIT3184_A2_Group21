@@ -1,14 +1,10 @@
 import base64
 import json
-import sys
 from unittest import mock
 
 import flask
 import pytest
 from google.cloud import firestore
-
-# Stands in for member 2's URL helper: each test sets what it answers.
-sys.modules["ecoguard_common.urls"] = mock.Mock()
 
 with mock.patch("google.cloud.firestore.Client"):
     import main
@@ -28,13 +24,6 @@ PNG_URL = f"{MEDIA}/{PNG_ID}.png"
 MP4_URL = f"{MEDIA}/{MP4_ID}.mp4"
 MISSING_URL = f"{MEDIA}/{MISSING_ID}.jpg"
 FOREIGN_URL = "https://example.com/cat.jpg"
-FILE_IDS = {
-    JPG_URL: JPG_ID,
-    JPG_THUMBNAIL_URL: JPG_ID,
-    PNG_URL: PNG_ID,
-    MP4_URL: MP4_ID,
-    MISSING_URL: MISSING_ID,
-}
 ACTIVE = {"status": "active"}
 
 
@@ -69,13 +58,6 @@ def db(monkeypatch):
     )
     monkeypatch.setattr(main, "db", firestore_db)
     return firestore_db
-
-
-@pytest.fixture(autouse=True)
-def url_helper(monkeypatch):
-    helper = mock.Mock(side_effect=FILE_IDS.get)
-    monkeypatch.setattr(main, "file_id_from_url", helper)
-    return helper
 
 
 def firestore_holds(db, records):
@@ -173,8 +155,7 @@ def test_one_result_per_url_in_request_order(db):
     db.batch.return_value.update.assert_called_once()
 
 
-def test_url_the_helper_rejects_is_not_found(db, url_helper):
-    url_helper.side_effect = ValueError
+def test_url_that_is_not_ours_is_not_found(db):
     body, status = call(bulk(urls=[FOREIGN_URL]))
     assert status == 200
     assert body["results"] == [
@@ -184,10 +165,9 @@ def test_url_the_helper_rejects_is_not_found(db, url_helper):
     db.batch.assert_not_called()
 
 
-def test_more_than_500_files_split_into_batches(db, url_helper):
+def test_more_than_500_files_split_into_batches(db):
     file_ids = [f"{n:064x}" for n in range(501)]
     urls = [f"{MEDIA}/{file_id}.jpg" for file_id in file_ids]
-    url_helper.side_effect = dict(zip(urls, file_ids)).get
     firestore_holds(db, dict.fromkeys(file_ids, ACTIVE))
     first, second = mock.Mock(), mock.Mock()
     db.batch.side_effect = [first, second]
