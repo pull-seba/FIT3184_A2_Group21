@@ -40,15 +40,6 @@ def log(severity: str, message: str, **fields):
     )
 
 
-def file_id_or_none(url: str) -> str | None:
-    # storage-layout.md says file_id_from_url rejects URLs that aren't ours
-    # but not whether it raises or returns None.
-    try:
-        return file_id_from_url(url)
-    except ValueError:
-        return None
-
-
 def signed_get_url(bucket: str, key: str) -> str:
     if not credentials.valid:
         # Refreshing also swaps Cloud Run's placeholder email "default" for
@@ -83,8 +74,9 @@ def handler(request: flask.Request):
     if not isinstance(thumbnail_url, str):
         return error(400, "bad_url", 'Send {"thumbnail_url": "<URL>"}')
 
-    file_id = file_id_or_none(thumbnail_url)
-    if file_id is None:
+    try:
+        file_id = file_id_from_url(thumbnail_url)
+    except ValueError:
         return error(404, "not_found", "No file has that thumbnail URL")
 
     try:
