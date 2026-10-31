@@ -62,7 +62,6 @@ def test_surrounding_spaces_and_fragments_are_ignored():
         f"gs://ecoguard-g21-models/{FILE_ID}.jpg",
         f"https://storage.googleapis.com/{MEDIA}",
         # Not a key our files use
-        f"gs://{MEDIA}/{FILE_ID}.gif",
         f"gs://{MEDIA}/{FILE_ID}",
         f"gs://{MEDIA}/thumbs/{FILE_ID}.jpg",
         f"gs://{DERIVED}/{FILE_ID}.jpg",

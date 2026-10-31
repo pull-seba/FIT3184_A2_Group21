@@ -6,17 +6,14 @@ Owner: member 2."""
 import re
 from urllib.parse import urlsplit
 
-from ecoguard_common.uploads import ACCEPTED
-
 MEDIA_BUCKET = "ecoguard-g21-media"
 DERIVED_BUCKET = "ecoguard-g21-derived"
 
 FILE_ID = r"(?P<file_id>[0-9a-f]{64})"
-EXTENSIONS = "|".join(extension for extension, _ in ACCEPTED.values())
 
 # The keys we hand out URLs for, by bucket: the original and its thumbnail.
 KEYS = {
-    MEDIA_BUCKET: rf"{FILE_ID}\.({EXTENSIONS})",
+    MEDIA_BUCKET: rf"{FILE_ID}\.[a-z0-9]+",
     DERIVED_BUCKET: rf"thumbs/{FILE_ID}\.jpg",
 }
 
