@@ -24,7 +24,6 @@ def every_form(bucket, key):
     """The same object as each URL form the contract accepts."""
     return [
         f"https://storage.googleapis.com/{bucket}/{key}",
-        f"https://{bucket}.storage.googleapis.com/{key}",
         f"gs://{bucket}/{key}",
     ]
 
@@ -47,9 +46,7 @@ def test_frames_give_their_files_id_not_the_frame_index():
 
 def test_signed_urls():
     thumbnail = f"https://storage.googleapis.com/{DERIVED}/thumbs/{FILE_ID}.jpg"
-    original = f"https://{MEDIA}.storage.googleapis.com/{FILE_ID}.png"
     assert file_id_from_url(thumbnail + SIGNATURE) == FILE_ID
-    assert file_id_from_url(original + SIGNATURE) == FILE_ID
 
 
 def test_url_encoded_keys():
@@ -57,7 +54,6 @@ def test_url_encoded_keys():
         f"https://storage.googleapis.com/{DERIVED}/thumbs%2F{FILE_ID}.jpg",
         f"https://storage.googleapis.com/{DERIVED}%2Fframes%2F{FILE_ID}%2F0000.jpg",
         f"gs://{DERIVED}/frames/{FILE_ID}%2F0001.jpg",
-        f"https://{MEDIA}.storage.googleapis.com/{FILE_ID}%2Ewebp" + SIGNATURE,
     ]
     for url in encoded:
         assert file_id_from_url(url) == FILE_ID
@@ -74,7 +70,6 @@ def test_surrounding_spaces_and_fragments_are_ignored():
         # Not Cloud Storage
         f"https://example.com/{MEDIA}/{FILE_ID}.jpg",
         f"http://storage.googleapis.com/{MEDIA}/{FILE_ID}.jpg",
-        f"https://storage.googleapis.com.example.com/{MEDIA}/{FILE_ID}.jpg",
         f"{MEDIA}/{FILE_ID}.jpg",
         "",
         # Not our buckets: someone else's, or the models bucket

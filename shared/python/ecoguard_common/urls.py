@@ -10,7 +10,6 @@ from ecoguard_common.uploads import ACCEPTED
 
 MEDIA_BUCKET = "ecoguard-g21-media"
 DERIVED_BUCKET = "ecoguard-g21-derived"
-STORAGE_HOST = "storage.googleapis.com"
 
 FILE_ID = r"(?P<file_id>[0-9a-f]{64})"
 EXTENSIONS = "|".join(extension for extension, _ in ACCEPTED.values())
@@ -32,13 +31,8 @@ def file_id_from_url(url: str) -> str:
     path = unquote(parts.path)
     if parts.scheme == "gs":
         bucket, key = parts.netloc, path.removeprefix("/")
-    elif parts.scheme == "https" and parts.netloc == STORAGE_HOST:
-        # https://storage.googleapis.com/<bucket>/<key>
+    elif parts.scheme == "https" and parts.netloc == "storage.googleapis.com":
         bucket, _, key = path.removeprefix("/").partition("/")
-    elif parts.scheme == "https" and parts.netloc.endswith(f".{STORAGE_HOST}"):
-        # https://<bucket>.storage.googleapis.com/<key>
-        bucket = parts.netloc.removesuffix(f".{STORAGE_HOST}")
-        key = path.removeprefix("/")
     else:
         raise ValueError("not a Cloud Storage URL")
 

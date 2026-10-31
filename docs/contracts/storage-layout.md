@@ -43,7 +43,7 @@ The media bucket allows `PUT` from the app's hosting origin and `http://localhos
 
 ## URL to file ID
 `ecoguard_common.urls.file_id_from_url` (owner: member 2) is the only way any function turns a URL into a file ID. It accepts:
-- `https://storage.googleapis.com/<bucket>/<key>` and `https://<bucket>.storage.googleapis.com/<key>`
+- `https://storage.googleapis.com/<bucket>/<key>`, the form our signed URLs take
 - `gs://<bucket>/<key>`
 - Signed or unsigned, URL-encoded or not
 
