@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Aussie EcoGuard - Cognito user pool, web app client, and the identity pool the chat widget uses to call Lex (rubric 1.1, 1.3). Owner: member 1."
+
+Parameters:
+  LexBotAliasArn:
+    Type: String
+    Default: ""
+    Description: The chatbot's alias ARN (member 4). Until it is set, signed-in users get no Lex access at all, rather than a wildcard.
+
+Conditions:
+  HasLexBot: !Not [!Equals [!Ref LexBotAliasArn, ""]]
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: ecoguard-users
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      # The spec asks for email, first name and last name at sign-up.
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: given_name
+          Required: true
+          Mutable: true
+        - Name: family_name
+          Required: true
+          Mutable: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          TemporaryPasswordValidityDays: 7
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: Verify your Aussie EcoGuard account
+        EmailMessage: "Welcome to Aussie EcoGuard! Your verification code is {####}"
+      # Admin-invited users get a temporary password they must change at first sign-in. Both paths stay
+      # open because the spec asks for the temporary password change (open question in docs/decisions.md).
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+        InviteMessageTemplate:
+          EmailSubject: Your Aussie EcoGuard account
+          EmailMessage: "You have been invited to Aussie EcoGuard. Username: {username} Temporary password: {####} - you will be asked to choose a new password when you first sign in."
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: ecoguard-web
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false # browser app: a secret could not be kept private
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH # SRP: the password itself is never sent to Cognito
+        - ALLOW_REFRESH_TOKEN_AUTH
+      EnableTokenRevocation: true # sign-out revokes tokens server-side
+      PreventUserExistenceErrors: ENABLED
+      ReadAttributes: [email, email_verified, given_name, family_name]
+      WriteAttributes: [email, given_name, family_name]
+
+  # Swaps a signed-in user's ID token for short-lived AWS credentials, so the chat widget can call
+  # Lex from the browser with no AWS keys in the bundle.
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: ecoguard_chat_widget
+      AllowUnauthenticatedIdentities: false # signed-in users only
+      CognitoIdentityProviders:
+        - ProviderName: !GetAtt UserPool.ProviderName
+          ClientId: !Ref UserPoolClient
+          ServerSideTokenCheck: true # a signed-out (revoked) token can't get credentials
+
+  # The role signed-in users get. The trust policy accepts only this identity pool, and only
+  # authenticated identities.
+  ChatWidgetRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: cognito-identity.amazonaws.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                cognito-identity.amazonaws.com:aud: !Ref IdentityPool
+              ForAnyValue:StringLike:
+                cognito-identity.amazonaws.com:amr: authenticated
+      Policies: !If
+        - HasLexBot
+        - - PolicyName: ecoguard-chat-widget
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: Allow
+                  Action: lex:RecognizeText
+                  Resource: !Ref LexBotAliasArn
+        - !Ref AWS::NoValue
+
+  IdentityPoolRoles:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref IdentityPool
+      Roles:
+        authenticated: !GetAtt ChatWidgetRole.Arn
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+  UserPoolClientId:
+    Description: Also the audience API Gateway checks on the ID token
+    Value: !Ref UserPoolClient
+  Issuer:
+    Description: Issuer for the API Gateway securityDefinitions
+    Value: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+  IdentityPoolId:
+    Description: For the chat widget, in environment.ts
+    Value: !Ref IdentityPool
+  ChatWidgetRoleArn:
+    Value: !GetAtt ChatWidgetRole.Arn
