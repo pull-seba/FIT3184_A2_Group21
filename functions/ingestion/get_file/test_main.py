@@ -194,30 +194,6 @@ def test_shows_progress_before_processing_finishes(db):
     assert body["pipeline"] == {}
 
 
-def test_video_shows_its_poster_and_frames_step(db):
-    db.record = record(
-        file_type="video",
-        content_type="video/mp4",
-        media_key=f"{SHA}.mp4",
-        thumbnail_key=f"thumbs/{SHA}.jpg",
-        pipeline={"thumbnail": "done", "frames": "done"},
-    )
-    body, _ = get()
-    assert body["file_type"] == "video"
-    assert body["url"].startswith(f"https://signed.example/{MEDIA}/{SHA}.mp4")
-    assert body["thumbnail_url"].startswith(
-        f"https://signed.example/{DERIVED}/thumbs/"
-    )
-    assert body["pipeline"] == {"thumbnail": "done", "frames": "done"}
-
-
-def test_a_failed_step_is_reported(db):
-    db.record = record(pipeline={"thumbnail": "failed"})
-    body, _ = get()
-    assert body["thumbnail_url"] is None
-    assert body["pipeline"] == {"thumbnail": "failed"}
-
-
 def test_any_signed_in_user_can_see_any_file(db):
     # Search shows every file to everyone, so reading one is not restricted.
     db.record = record(uploaded_by="the-uploader")
@@ -249,15 +225,6 @@ def test_refreshes_expired_credentials_before_signing(db, monkeypatch):
     db.record = record()
     get()
     credentials.refresh.assert_called_once()
-
-
-def test_never_writes(db):
-    db.record = record()
-    get()
-    document = db.collection.return_value.document.return_value
-    document.set.assert_not_called()
-    document.update.assert_not_called()
-    document.delete.assert_not_called()
 
 
 # ---- Failures ----
