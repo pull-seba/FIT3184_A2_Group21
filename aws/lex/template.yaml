@@ -1,12 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Aussie EcoGuard - the Lex chatbot and the Lambda that runs its searches through the GCP gateway (rubric 2.2.5, cross-cloud link 2). Owner: member 4."
 
-Parameters:
-  ApiBase:
-    Type: String
-    Default: https://ecoguard-gw-2qp1rpih.ue.gateway.dev
-    Description: The GCP API Gateway the Lambda searches through
-
 Resources:
   # Lex must have a role to assume, but a text-only bot uses it for nothing (no Polly, no Comprehend).
   BotRole:
@@ -62,7 +56,7 @@ Resources:
       Timeout: 25
       Environment:
         Variables:
-          API_BASE: !Ref ApiBase
+          API_BASE: https://ecoguard-gw-2qp1rpih.ue.gateway.dev
       Code: .
 
   FulfilmentPermission:
