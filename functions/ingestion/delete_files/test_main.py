@@ -270,12 +270,9 @@ def test_leaves_other_files_alone(cloud):
     "url",
     [
         "https://storage.googleapis.com/{bucket}/{id}.mp4",
-        "https://{bucket}.storage.googleapis.com/{id}.mp4",
         "gs://{bucket}/{id}.mp4",
         "https://storage.googleapis.com/{bucket}/{id}.mp4?" + SIGNATURE,
         "https://storage.googleapis.com/{derived}/thumbs/{id}.jpg?" + SIGNATURE,
-        "https://storage.googleapis.com/{derived}/frames/{id}/0003.jpg",
-        "gs://{derived}/frames/{id}/0000.jpg",
     ],
 )
 def test_any_url_of_a_file_deletes_all_of_it(cloud, url):

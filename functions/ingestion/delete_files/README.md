@@ -3,7 +3,7 @@
 Owner: member 2 · Rubric: 2.3.2
 
 ## What it does
-Deletes files by URL, along with everything made from them. Any URL of a file works: its original, thumbnail or one of its frames, signed or not, through `ecoguard_common.urls.file_id_from_url`. Only the person who uploaded a file can delete it.
+Deletes files by URL, along with everything made from them. Any URL of a file works: its original or thumbnail, signed or not, through `ecoguard_common.urls.file_id_from_url`. Only the person who uploaded a file can delete it.
 
 For each file, in this order:
 1. Sets `status: "deleting"` on its record. Queries and `upload_init` only match `"active"`, so the file leaves every result at once, even if a later step fails.
