@@ -39,8 +39,11 @@
   }
 
   <h2>Uploaded</h2>
+  <!-- Two-way, so deleting files in the gallery takes them out of `uploaded` too. -->
   <app-gallery
-    [files]="uploaded()"
+    [(files)]="uploaded"
     emptyMessage="Files you upload appear here once they're processed."
-  />
+  >
+    <app-delete-action />
+  </app-gallery>
 </main>
