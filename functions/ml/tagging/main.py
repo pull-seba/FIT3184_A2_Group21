@@ -1,20 +1,23 @@
 """tagging: species tags with counts for every uploaded image and video.
 
-Owner: member 3. Rubric 2.1.3. Triggers: see README.md.
+Owner: member 3. Rubric 2.1.3, and 2.2.4 for lost pet sightings.
+Triggers: see README.md.
 """
 
 import base64
 import hashlib
 import json
 import re
+from datetime import datetime
 
 import functions_framework
 from google.api_core import exceptions
 from google.cloud import firestore, storage
+from google.cloud.firestore_v1.vector import Vector
 
 from ecoguard_common.logs import log
 from ecoguard_common.uploads import MEDIA_KEY, rejection_reason
-from ecoguard_ml import BadImage, detect
+from ecoguard_ml import BadImage, detect, sightings
 
 db = firestore.Client()
 gcs = storage.Client()
@@ -68,7 +71,48 @@ def write_tags(doc, detected: dict[str, int], version: str):
     _write_tags(db.transaction(), doc, detected, version)
 
 
-def tag_file(file_id: str, images: list[bytes]):
+def write_sightings(file_id, pets, config, uploaded_at, is_public):
+    """sightings/{file_id}_{n} for each pet, then deletes any numbered n or
+    higher from an earlier run that found more pets. A repeat event gives
+    the same IDs, so it overwrites rather than duplicates. Tagging owns
+    every field, and merge=True follows the schema's rule for set()."""
+    collection = db.collection("sightings")
+    for n, pet in enumerate(pets):
+        collection.document(f"{file_id}_{n}").set(
+            {
+                "file_id": file_id,
+                "species": pet["species"],
+                "colour": pet["colour"],
+                "breed": pet["breed"],
+                "embedding": Vector(pet["embedding"]),
+                "embedding_model": config["embedding_model"],
+                "bbox": pet["bbox"],
+                "frame_index": pet["frame_index"],
+                "uploaded_at": uploaded_at,
+                "is_public": is_public,
+                "created_at": firestore.SERVER_TIMESTAMP,
+            },
+            merge=True,
+        )
+    query = collection.where(
+        filter=firestore.FieldFilter("file_id", "==", file_id)
+    )
+    for old in query.stream():
+        if int(old.id.rsplit("_", 1)[1]) >= len(pets):
+            old.reference.delete()
+
+
+def tag_file(
+    file_id: str,
+    images: list[bytes],
+    *,
+    video: bool = False,
+    uploaded_at=None,
+    is_public: bool | None = None,
+):
+    """Tags and lost pet sightings for one file. An image passes its
+    uploaded_at and is_public from the storage event; a video reads them
+    from its files record."""
     config = detect.model_config(db)
     doc = db.collection("files").document(file_id)
     record = doc.get().to_dict() or {}
@@ -79,15 +123,27 @@ def tag_file(file_id: str, images: list[bytes]):
         log("INFO", "already tagged, repeat event ignored", file_id=file_id)
         return
 
-    # Any other error (throttling, network, federation) is raised, so
-    # Eventarc or Pub/Sub delivers the event again.
+    if video:
+        # frames-ready is published after process_upload wrote the record.
+        uploaded_at = record.get("uploaded_at", firestore.SERVER_TIMESTAMP)
+        is_public = record.get("is_public", True)
+
+    # Any other error (throttling, network, federation, Vertex AI) is
+    # raised, so Eventarc or Pub/Sub delivers the event again.
     try:
         results = [detect.analyse(image, config) for image in images]
+        pets = []  # numbered on across frames: _0, _1, ... for the whole file
+        for index, (image, (_, labels)) in enumerate(zip(images, results)):
+            for pet in sightings.pets(image, labels, config):
+                pets.append(pet | {"frame_index": index if video else None})
     except BadImage as error:
         doc.set({"pipeline": {"tagging": "failed"}}, merge=True)
         log("ERROR", "image can't be tagged", file_id=file_id, error=str(error))
         return
 
+    # Sightings first: the check above skips a file whose tagging is "done",
+    # so tags written before a failed sightings write would never be retried.
+    write_sightings(file_id, pets, config, uploaded_at, is_public)
     tags = max_per_tag([counts for counts, _ in results])
     write_tags(doc, tags, config["version"])
     log(
@@ -96,6 +152,7 @@ def tag_file(file_id: str, images: list[bytes]):
         file_id=file_id,
         tags=tags,
         images=len(results),
+        sightings=len(pets),
         model_version=config["version"],
         labels=[detect.animal_labels(labels) for _, labels in results],
     )
@@ -124,7 +181,16 @@ def on_upload(event):
     if hashlib.sha256(content).hexdigest() != file_id:
         log("WARNING", "hash mismatch, not tagged", file_id=file_id)
         return
-    tag_file(file_id, [content])
+    # Read from the event, not files/: process_upload may not have written
+    # the record yet. is_public is process_upload's rule, in base_record.
+    metadata = data.get("metadata") or {}
+    tag_file(
+        file_id,
+        [content],
+        # RFC 3339 string -> datetime, so Firestore stores a timestamp
+        uploaded_at=datetime.fromisoformat(data["timeCreated"]),
+        is_public=metadata.get("is-public", "true") == "true",
+    )
 
 
 @functions_framework.cloud_event
@@ -147,4 +213,4 @@ def on_frames_ready(event):
     except exceptions.NotFound:
         log("INFO", "frames deleted before tagging", file_id=file_id)
         return
-    tag_file(file_id, frames)
+    tag_file(file_id, frames, video=True)
