@@ -80,11 +80,22 @@ def client(region: str):
 
 def normalise(label: dict) -> dict:
     """One Rekognition label in the shape the bake-off cached
-    (tools/testset/data/rekognition_raw.jsonl)."""
+    (tools/testset/data/rekognition_raw.jsonl), plus each box's position as
+    [x, y, width, height] fractions, which lost pet crops need."""
+    instances = label.get("Instances", [])
     return {
         "name": label["Name"],
         "confidence": label["Confidence"],
-        "instances": [i["Confidence"] for i in label.get("Instances", [])],
+        "instances": [i["Confidence"] for i in instances],
+        "boxes": [
+            [
+                i["BoundingBox"]["Left"],
+                i["BoundingBox"]["Top"],
+                i["BoundingBox"]["Width"],
+                i["BoundingBox"]["Height"],
+            ]
+            for i in instances
+        ],
         "parents": [p["Name"] for p in label.get("Parents", [])],
     }
 
