@@ -8,12 +8,16 @@ class QueryError(ValueError):
     """A tag query the API rejects with 400. Its args are (code, message)."""
 
 
-def known_tags() -> set[str]:
+def load_tags() -> dict:
     package_dir = Path(__file__).parent
     deployed_copy = package_dir / "tags.json"
     repo_copy = package_dir.parent.parent / "tags.json"
     path = deployed_copy if deployed_copy.exists() else repo_copy
-    return {tag["name"] for tag in json.loads(path.read_text())["tags"]}
+    return json.loads(path.read_text())
+
+
+def known_tags() -> set[str]:
+    return {tag["name"] for tag in load_tags()["tags"]}
 
 
 def parse_query(body: object, known_tags: set[str]) -> dict[str, int]:
