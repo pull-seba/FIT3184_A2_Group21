@@ -68,7 +68,7 @@ Gen2 names allow only lowercase letters, digits and hyphens.
 cd functions/ml/tagging
 cp -r ../../../shared/python/ecoguard_common .   # gitignored copies of the shared packages
 cp -r ../ecoguard_ml .
-cp ../../../shared/tags.json ecoguard_ml/        # the label map detect reads
+cp ../../../shared/tags.json ecoguard_common/    # the tag list and label map
 ROLE=arn:aws:iam::<aws-account-id>:role/ecoguard-rekognition-detect
 SA=fn-tagging@ecoguard-g21.iam.gserviceaccount.com
 

@@ -7,11 +7,10 @@ checks this file gives the same tags as the bake-off on all 140 test photos.
 """
 
 import io
-import json
-from pathlib import Path
 
 from PIL import Image, ImageOps
 
+from ecoguard_common.tag_match import load_tags
 from ecoguard_ml import BadImage, rekognition
 
 # Rekognition reads only JPEG or PNG up to 5 MB, and uploads can be WebP or up
@@ -26,20 +25,10 @@ MAX_SIDE = 2048
 DETECTORS = {"rekognition": rekognition.detect_labels}
 
 
-def _load_label_map() -> dict[str, str]:
-    """model_label_map from shared/tags.json, keys lowercased: labels are
-    matched case-insensitively (decision of 28 Oct)."""
-    here = Path(__file__).parent
-    path = here / "tags.json"  # the copy made at deploy
-    if not path.exists():
-        # In the repo. Only looked up here: deployed, the package sits at
-        # /workspace/ecoguard_ml, which has no folder two levels up.
-        path = here.parents[2] / "shared" / "tags.json"
-    label_map = json.loads(path.read_text())["model_label_map"]
-    return {label.lower(): tag for label, tag in label_map.items()}
-
-
-LABEL_MAP = _load_label_map()
+# Labels match case-insensitively (decision of 28 Oct).
+LABEL_MAP = {
+    label.lower(): tag for label, tag in load_tags()["model_label_map"].items()
+}
 
 
 def prepare_image(data: bytes) -> bytes:
