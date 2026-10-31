@@ -48,21 +48,21 @@ Results lists are `{"results": [FileSummary, ...]}`, newest first unless a route
 | `POST /search/by-file` | 3 | `ml/search_by_file` | 2.2.3 |
 | `POST /search/lost-pet` | 3 | `ml/lost_pet` | 2.2.4 |
 | `POST /tags/bulk` | 4 | `search/bulk_tags` | 2.3.1 |
-| `GET /notifications/subscriptions` | 1 | decided by member 1 | 2.3.3 |
-| `PUT /notifications/subscriptions` | 1 | decided by member 1 | 2.3.3 |
+| `GET /notifications/subscriptions` | 1 | `notify/subscriptions` | 2.3.3 |
+| `PUT /notifications/subscriptions` | 1 | `notify/subscriptions` | 2.3.3 |
 
 ### `POST /uploads/init` (member 2)
 Request:
 ```json
 { "sha256": "<64 hex>", "filename": "fox-cam3.jpg", "content_type": "image/jpeg", "size_bytes": 2483021, "is_public": true }
 ```
-Response when the file already exists (no upload happens and no trigger fires):
+Response when `files/<sha256>` is an active record (no upload happens and no trigger fires):
 ```json
 { "status": "duplicate", "file": { "...": "FileSummary" } }
 ```
 Response when the browser should upload:
 ```json
-{ "status": "upload", "file_id": "<64 hex>", "upload_url": "<signed PUT URL>", "headers": { "Content-Type": "image/jpeg", "x-goog-if-generation-match": "0", "x-goog-meta-uploaded-by": "<sub>", "x-goog-meta-original-filename": "fox-cam3.jpg" }, "expires_at": "2026-10-26T10:00:00Z" }
+{ "status": "upload", "file_id": "<64 hex>", "upload_url": "<signed PUT URL>", "headers": { "Content-Type": "image/jpeg", "x-goog-if-generation-match": "0", "x-goog-meta-uploaded-by": "<sub>", "x-goog-meta-original-filename": "fox-cam3.jpg", "x-goog-meta-is-public": "true" }, "expires_at": "2026-10-26T10:00:00Z" }
 ```
 Errors: `400` bad hash, `413` over the size limit, `415` type not accepted.
 
@@ -114,7 +114,7 @@ At least `image_base64` or `species` is required. Only public sightings within `
 `operation` 1 adds (count 1 if the tag is absent), 0 removes. Removing a tag a file doesn't have is ignored. Unknown tags give `400 unknown_tag`. Response: one result per URL, as in `/files/delete`, with `status` `updated` or `not_found`.
 
 ### `GET` and `PUT /notifications/subscriptions` (member 1)
-`PUT` body `{"tags": ["fox", "cane toad"]}` replaces the caller's alert tags; `GET` returns them. Member 1 decides where the backend runs and documents it here.
+`PUT` body `{"tags": ["fox", "cane toad"]}` replaces the caller's alert tags; `GET` returns them. Tags are the caller's SNS email subscription to `ecoguard-tag-alerts`, filtered on `tags`; the function reaches AWS without keys (`docs/decisions.md`).
 
 ## Chatbot
 The Lex fulfilment Lambda (member 4) calls `/search/tags`, `/search/species` and `/search/lost-pet` through the gateway like any other client, with a Cognito ID token (see `docs/decisions.md` for how it gets one). It returns each result as a clickable link.

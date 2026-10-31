@@ -17,13 +17,14 @@ gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1 ||
   gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT"
 
 # Storage + Firestore, Cloud Run functions (built by Cloud Build), upload triggers (Eventarc),
-# notifications (Pub/Sub), API Gateway, signed URLs (IAM credentials) and the budget below.
+# notifications (Pub/Sub), API Gateway, signed URLs (IAM credentials), lost pet embeddings (Vertex AI)
+# and the budget below.
 gcloud services enable --project="$PROJECT_ID" \
   storage.googleapis.com firestore.googleapis.com \
   cloudfunctions.googleapis.com run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com \
   eventarc.googleapis.com pubsub.googleapis.com \
   apigateway.googleapis.com servicemanagement.googleapis.com servicecontrol.googleapis.com \
-  iamcredentials.googleapis.com billingbudgets.googleapis.com
+  iamcredentials.googleapis.com billingbudgets.googleapis.com aiplatform.googleapis.com
 
 gcloud firestore databases describe --project="$PROJECT_ID" >/dev/null 2>&1 ||
   gcloud firestore databases create --project="$PROJECT_ID" --location="$REGION" --type=firestore-native

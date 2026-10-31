@@ -5,8 +5,8 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 ## Rules
 - `file_id` and every `files` document ID is the lowercase hex SHA-256 of the file's bytes (64 characters).
 - Write only the fields your function owns, using `set(data, merge=True)` or `update()`. Never call `set()` without `merge=True` on a document that may exist.
-- Every `*_at` field is written with `firestore.SERVER_TIMESTAMP`.
-- Store bucket names and object keys. Never store a URL; sign one when building a response.
+- Every `*_at` field is written with `firestore.SERVER_TIMESTAMP`, except a seeded record's `uploaded_at` (see `seed`).
+- Store bucket names, object keys and each object's permanent `gs://` address. Never store a signed URL: it expires. Sign one when building a response.
 - Tag names must exist in `shared/tags.json`. Tag names can contain spaces ("feral pig"), so build field paths with `firestore.FieldPath("tags", name)`, never by string concatenation.
 
 ## `files/{file_id}`: one document per uploaded image or video
@@ -20,13 +20,15 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 | `size_bytes` | integer | 2 `process_upload` | |
 | `media_bucket` | string | 2 `process_upload` | |
 | `media_key` | string | 2 `process_upload` | `<file_id>.<ext>` |
+| `media_uri` | string | 2 `process_upload` | `gs://<media_bucket>/<media_key>`: the original's permanent storage address, which the spec calls its storage URL. Browsers can't open it; sign a URL per response |
 | `thumbnail_key` | string | 2 `process_upload` | `thumbs/<file_id>.jpg` in the derived bucket; videos get a poster thumbnail from their first frame |
+| `thumbnail_uri` | string | 2 `process_upload` | `gs://<project-id>-derived/<thumbnail_key>`, written with `thumbnail_key` |
 | `frame_keys` | array of strings | 2 `process_upload` | Videos only: `frames/<file_id>/<index>.jpg`, one per 10 s |
 | `duration_s` | number | 2 `process_upload` | Videos only |
 | `uploaded_by` | string | 2 `process_upload` | Cognito `sub` of the uploader |
 | `uploaded_at` | timestamp | 2 `process_upload` | |
-| `is_public` | boolean | 2 `process_upload` | Whether the file counts as a public sighting for lost pet search. Default `true` (Proposed) |
-| `status` | `"active"` or `"deleting"` | 2 `process_upload`, `delete_files` | Queries skip `"deleting"` |
+| `is_public` | boolean | 2 `process_upload` | Whether the file counts as a public sighting for lost pet search. Read from the object's `is-public` metadata, which `upload_init` signs from the request; default `true` |
+| `status` | `"active"` or `"deleting"` | 2 `process_upload`, `delete_files` | `process_upload` writes `"active"` in the same merge as `media_key`, once the SHA-256 is verified. Queries and `upload_init` match only `"active"`, so a document tagging wrote first, which has no `status`, never matches |
 | `pipeline.thumbnail` | `"done"` or `"failed"` | 2 `process_upload` | Each pipeline step writes only its own key |
 | `pipeline.frames` | `"done"` or `"failed"` | 2 `process_upload` | Videos only |
 | `pipeline.tagging` | `"done"` or `"failed"` | 3 tagging | |
@@ -34,7 +36,7 @@ Owner: member 2. Change it only through a PR from member 2 that requests every a
 | `manual_tags` | array of strings | 4 `bulk_tags` | Tags a person added by hand. Re-tagging keeps them |
 | `model_version` | string | 3 tagging | The config version that produced the automatic tags |
 | `tagged_at` | timestamp | 3 tagging | |
-| `seed` | boolean | 2 `seed_data.py` | `true` only on seeded test records, so they are easy to wipe |
+| `seed` | boolean | 2 `seed_data.py` | `true` only on seeded test records, so they are easy to wipe. `seed_data.py` writes the rest of a seeded record too, following this table, with `uploaded_at` in the past so date filters such as "yesterday" can be tested |
 
 ### Who writes `tags`
 - Tagging (3) runs in a transaction: it writes the detected tags, then puts back every tag in `manual_tags` with its existing count.
@@ -52,7 +54,8 @@ Firestore vector search needs one vector per document, so each detected pet gets
 | `species` | `"cat"` or `"dog"` | 3 tagging | From `lost_pet_species` in `shared/tags.json` |
 | `colour` | string or null | 3 tagging | For example "ginger", "black", "tabby" |
 | `breed` | string or null | 3 tagging | When the model provides one |
-| `embedding` | Firestore `Vector` | 3 tagging | Image embedding of the pet's crop; dimension set by the embedding model |
+| `embedding` | Firestore `Vector` | 3 tagging | Image embedding of the pet's crop: 1408 numbers from Vertex AI `multimodalembedding@001` |
+| `embedding_model` | string | 3 tagging | The model that made `embedding`. Vectors from different models can't be compared, so a model change means re-embedding |
 | `bbox` | array of 4 numbers | 3 tagging | `[x, y, width, height]`, each 0 to 1 |
 | `frame_index` | integer or null | 3 tagging | Videos only |
 | `uploaded_at` | timestamp | 3 tagging | Copied from the file, so searches can filter by date |
@@ -64,6 +67,25 @@ Firestore vector search needs one vector per document, so each detected pet gets
 ## `config/model`: the active models, so models change without code changes (rubric 2.1.3)
 
 Owner: member 3. Holds the detector name, weights location and version, confidence threshold, any chained classifier, and the embedding model. The tagging service reads it on start-up and re-reads it every few minutes.
+
+The source of truth is `functions/ml/config/model.json`; `functions/ml/config/push_model_config.py` writes it here.
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `version` | string | Copied to `files.model_version` on every tagged file |
+| `detector` | string | `rekognition` |
+| `detector_region` | string | AWS region for the detector, `us-east-1` |
+| `request_min_confidence` | number | Lowest confidence asked for from the detector; per-tag thresholds are applied after |
+| `thresholds` | map of tag name to number | Per-tag minimum confidence (0-100), from the bake-off in `tools/testset` |
+| `default_threshold` | number | For a tag missing from `thresholds` |
+| `box_min_confidence` | number | A box counts towards a tag's count once its label passes the threshold and the box is at least this confident |
+| `borrow_boxes` | boolean | When a tag has no boxes of its own, count the boxes on another animal label in the photo |
+| `label_map_version` | integer | The `shared/tags.json` version these thresholds were chosen for |
+| `chained_classifier` | string or null | None for now |
+| `embedding_model` | string | `multimodalembedding@001` |
+| `embedding_dimension` | integer | 1408 (Firestore vector indexes allow up to 2048) |
+| `embedding_location` | string | Vertex AI region for the embedding call |
+| `updated_at` | timestamp | Set by the push script |
 
 ## `subscriptions/{user_sub}`: tag alert preferences
 

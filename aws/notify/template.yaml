@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Aussie EcoGuard - tag alert emails: SNS topic and the Lambda that GCP Pub/Sub pushes to (rubric 2.3.3). Owner: member 1."
+
+Parameters:
+  PushAccount:
+    Type: String
+    Default: ecoguard-pubsub-push@ecoguard-g21.iam.gserviceaccount.com
+    Description: The GCP service account Pub/Sub signs its push tokens as
+  AppUrl:
+    Type: String
+    Default: http://localhost:5173
+    Description: Link in the alert emails
+
+Resources:
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: ecoguard-tag-alerts
+      DisplayName: EcoGuard
+
+  NotifyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ecoguard-notify
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      # Same as aws/iam/notify.json: publish to one topic and write its own logs, nothing else.
+      Policies:
+        - PolicyName: ecoguard-notify
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref AlertTopic
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ecoguard-notify:*
+
+  NotifyLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/ecoguard-notify
+      RetentionInDays: 14
+
+  NotifyFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: NotifyLogs
+    Properties:
+      FunctionName: ecoguard-notify
+      Runtime: python3.12
+      Handler: index.handler
+      Role: !GetAtt NotifyRole.Arn
+      Timeout: 15
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref AlertTopic
+          PUSH_ACCOUNT: !Ref PushAccount
+          APP_URL: !Ref AppUrl
+      # Placeholder until app.py is pasted in; it refuses every request.
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              return {"statusCode": 503}
+
+  # Pub/Sub can't sign AWS requests, so the URL is public and the code checks Google's token.
+  NotifyUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref NotifyFunction
+      AuthType: NONE
+
+  NotifyUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NotifyFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  NotifyInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref NotifyFunction
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+Outputs:
+  TopicArn:
+    Value: !Ref AlertTopic
+  PushEndpoint:
+    Description: Use as the Pub/Sub push endpoint and token audience
+    Value: !GetAtt NotifyUrl.FunctionUrl

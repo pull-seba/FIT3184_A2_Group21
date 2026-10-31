@@ -1,0 +1,20 @@
+/* Page navigation under the top bar. Wraps on narrow screens instead of scrolling. */
+.pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+.pages a {
+  padding: 4px 0;
+  color: var(--mat-sys-on-surface-variant);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.pages a:hover,
+.pages a:focus-visible { color: var(--mat-sys-on-surface); }
+.pages a.active {
+  color: var(--mat-sys-primary);
+  border-bottom-color: var(--mat-sys-primary);
+}

@@ -3,7 +3,7 @@
 Owner: member 2 (the models bucket: member 3). Change it only through the owner's PR.
 
 ## Buckets
-All buckets are private, use uniform bucket-level access with public access prevention enforced, and live in the GCP region.
+All buckets are private, use uniform bucket-level access with public access prevention enforced, and live in `us-east1`, with Firestore and the functions: an Eventarc Cloud Storage trigger must be in its bucket's region, and a bucket's location can't change once it's created.
 
 | Bucket | Object key | Written by | Read by | Triggers |
 | --- | --- | --- | --- | --- |
@@ -22,7 +22,7 @@ Photos sent to `/search/by-file` and `/search/lost-pet` are never written to any
 - Thumbnails: JPEG, longest side 320 px, aspect ratio preserved, quality 80. Videos get a poster thumbnail from their first frame at the same key.
 - Frames: one per 10 s of video. `<index>` is four digits counting from `0000` (0 s); `0001` is 10 s. A clip shorter than 10 s gives one frame.
 
-## Accepted uploads (Proposed)
+## Accepted uploads
 | Content type | Extension | Size limit |
 | --- | --- | --- |
 | `image/jpeg` | `jpg` | 20 MB |
@@ -34,7 +34,7 @@ Photos sent to `/search/by-file` and `/search/lost-pet` are never written to any
 HEIC isn't accepted: OpenCV can't read it.
 
 ## Signed URLs
-- Upload: V4, `PUT`, valid 15 minutes, for `<file_id>.<ext>` in the media bucket. Signed headers the browser must send exactly: `Content-Type`, `x-goog-if-generation-match: 0` (so an existing object can't be overwritten), `x-goog-meta-uploaded-by` (Cognito `sub`), `x-goog-meta-original-filename` (URL-encoded). A `412` response means the object already exists: treat it as a duplicate.
+- Upload: V4, `PUT`, valid 15 minutes, for `<file_id>.<ext>` in the media bucket. Signed headers the browser must send exactly: `Content-Type`, `x-goog-if-generation-match: 0` (so an existing object can't be overwritten), `x-goog-meta-uploaded-by` (Cognito `sub`), `x-goog-meta-original-filename` (URL-encoded), `x-goog-meta-is-public` (`true` or `false`, from the init request). A `412` response means the object already exists: treat it as a duplicate.
 - Download: V4, `GET`, valid 60 minutes, created per response for originals and thumbnails.
 - Functions sign without key files, through IAM signing; each signing function's service account needs Service Account Token Creator on itself.
 
@@ -47,4 +47,4 @@ The media bucket allows `PUT` from the app's hosting origin and `http://localhos
 - `gs://<bucket>/<key>`
 - Signed or unsigned, URL-encoded or not
 
-It drops the query string, URL-decodes the key, rejects buckets that aren't ours, and returns the 64-character hex stem of the key's last path segment. It works for originals, thumbnails and frames alike, so the thumbnail lookup (2.2.2), bulk tagging (2.3.1) and delete (2.3.2) all resolve URLs the same way.
+It drops the query string, URL-decodes the key, rejects buckets that aren't ours, and returns the 64-character file ID from the key: `<file_id>.<ext>` in the media bucket, `thumbs/<file_id>.jpg` or `frames/<file_id>/<index>.jpg` in the derived bucket. Any other URL raises `ValueError`, whose message never repeats the URL, so a signed URL can't reach the logs. It works for originals, thumbnails and frames alike, so the thumbnail lookup (2.2.2), bulk tagging (2.3.1) and delete (2.3.2) all resolve URLs the same way.

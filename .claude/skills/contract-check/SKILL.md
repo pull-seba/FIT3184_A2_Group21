@@ -14,7 +14,7 @@ allowed-tools: Bash(git status *) Bash(git diff *) Read Grep Glob
    - `docs/contracts/events.md`: triggers and payloads
    - `shared/tags.json`: every tag string used
    - `.github/CODEOWNERS`: whether a changed file belongs to another member
-3. Also check the "Rules for every change" in `CLAUDE.md`: no credentials, no stored URLs, no stored query photos, per-frame maximum, calls only through the gateway, idempotent event handlers.
+3. Also check the "Rules for every change" in `CLAUDE.md`: no credentials, no stored signed URLs, no stored query photos, per-frame maximum, calls only through the gateway, idempotent event handlers.
 4. If a route was added or removed, check `scripts/check-no-token.sh` lists the same routes as `api-routes.md`.
 
 Report in three groups: **Breaks a contract**, **Touches another member's file**, **Fine**. For each problem give the file and line, the contract line it breaks and the fix. If the code is right and the contract needs to change, name the contract's owner and say it needs its own PR. End with one line: `Contract check: pass` or `Contract check: fail`.
