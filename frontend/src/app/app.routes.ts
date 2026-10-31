@@ -15,7 +15,8 @@ export const pages: Routes = [
   { path: 'query-by-file', title: 'Search by file', component: Placeholder, data: { title: 'Search by file', owner: 3 } },
   { path: 'lost-pet', title: 'Lost pet', component: Placeholder, data: { title: 'Lost pet', owner: 3 } },
   { path: 'tags', title: 'Manage tags', component: Placeholder, data: { title: 'Manage tags', owner: 4 } },
-  { path: 'chat', title: 'Chat', component: Placeholder, data: { title: 'Chat', owner: 4 } },
+  // Lazy-loaded, so the AWS SDK only downloads when someone opens Chat.
+  { path: 'chat', title: 'Chat', loadComponent: () => import('./pages/chat/chat').then((m) => m.Chat) },
   { path: 'notifications', title: 'Alerts', component: Placeholder, data: { title: 'Alerts', owner: 1 } },
 ];
 

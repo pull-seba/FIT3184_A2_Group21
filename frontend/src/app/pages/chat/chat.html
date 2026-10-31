@@ -1,0 +1,31 @@
+<main class="chat">
+  <h1>Chat</h1>
+  <div class="log" role="log" aria-label="Conversation">
+    <ol>
+      <li class="bot">
+        Hi! Try "Show me all photos of foxes spotted yesterday" or "Help me find a lost ginger cat".
+      </li>
+      @for (line of lines(); track $index) {
+        <li [class]="line.from">
+          @if (line.url) {
+            <a [href]="line.url" target="_blank" rel="noopener">
+              <mat-icon>open_in_new</mat-icon>{{ line.text }}
+            </a>
+          } @else {
+            {{ line.text }}
+          }
+        </li>
+      }
+      @if (pending()) {
+        <li class="bot pending">One moment…</li>
+      }
+    </ol>
+  </div>
+  <form (submit)="$event.preventDefault(); send(box)">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Ask about wildlife photos</mat-label>
+      <input matInput #box maxlength="1024" autocomplete="off" />
+    </mat-form-field>
+    <button mat-flat-button type="submit" [disabled]="pending()">Send</button>
+  </form>
+</main>
