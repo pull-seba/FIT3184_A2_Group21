@@ -10,6 +10,13 @@ Parameters:
     Type: String
     Default: http://localhost:5173
     Description: Link in the alert emails
+  SubscriptionsAccountId:
+    Type: String
+    Default: ""
+    Description: Unique ID of the GCP service account fn-subscriptions. Until it is set, the role isn't created.
+
+Conditions:
+  HasSubscriptionsAccount: !Not [!Equals [!Ref SubscriptionsAccountId, ""]]
 
 Resources:
   AlertTopic:
@@ -43,6 +50,41 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ecoguard-notify:*
+
+  # The GCP function behind /notifications/subscriptions assumes this with its Google ID token, so it
+  # holds no AWS keys. Same as aws/iam/subscriptions.json and subscriptions-trust.json.
+  SubscriptionsRole:
+    Type: AWS::IAM::Role
+    Condition: HasSubscriptionsAccount
+    Properties:
+      RoleName: ecoguard-subscriptions
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: accounts.google.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                accounts.google.com:sub: !Ref SubscriptionsAccountId
+                accounts.google.com:oaud: !Sub arn:aws:iam::${AWS::AccountId}:role/ecoguard-subscriptions
+      Policies:
+        - PolicyName: ecoguard-subscriptions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Subscribe
+                  - sns:ListSubscriptionsByTopic
+                Resource: !Ref AlertTopic
+              - Effect: Allow
+                Action:
+                  - sns:GetSubscriptionAttributes
+                  - sns:SetSubscriptionAttributes
+                  - sns:Unsubscribe
+                Resource: !Sub ${AlertTopic}:*
 
   NotifyLogs:
     Type: AWS::Logs::LogGroup
@@ -99,3 +141,7 @@ Outputs:
   PushEndpoint:
     Description: Use as the Pub/Sub push endpoint and token audience
     Value: !GetAtt NotifyUrl.FunctionUrl
+  SubscriptionsRoleArn:
+    Condition: HasSubscriptionsAccount
+    Description: SUBSCRIPTIONS_ROLE_ARN for functions/notify/subscriptions
+    Value: !GetAtt SubscriptionsRole.Arn

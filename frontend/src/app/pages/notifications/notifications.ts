@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import tagList from '../../../../../shared/tags.json';
-import { ApiService } from '../../api/api.service';
+import { ApiError, ApiService } from '../../api/api.service';
 
 // GET and PUT /notifications/subscriptions (docs/contracts/api-routes.md).
 interface Subscriptions {
@@ -57,8 +57,14 @@ export class Notifications implements OnInit {
           : "Saved. You won't get any alerts.",
         false,
       );
-    } catch {
-      this.show("Your alerts couldn't be saved. Please try again.", true);
+    } catch (err) {
+      // 409: new tags while the first confirmation email is unanswered, so its message says what to do.
+      this.show(
+        err instanceof ApiError && err.status === 409
+          ? err.message
+          : "Your alerts couldn't be saved. Please try again.",
+        true,
+      );
     } finally {
       this.saving.set(false);
     }
