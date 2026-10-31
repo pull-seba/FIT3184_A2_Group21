@@ -44,6 +44,7 @@ bucket_role() {
 }
 
 UPLOAD_INIT=$(service_account fn-upload-init "upload_init (member 2)")
+GET_FILE=$(service_account fn-get-file "get_file (member 2)")
 PROCESS_UPLOAD=$(service_account fn-process-upload "process_upload (member 2)")
 
 # A signed URL acts with its signer's permissions, so upload_init needs whatever its URLs do: PUT new
@@ -51,6 +52,9 @@ PROCESS_UPLOAD=$(service_account fn-process-upload "process_upload (member 2)")
 bucket_role "$MEDIA_BUCKET" "$UPLOAD_INIT" roles/storage.objectCreator
 bucket_role "$MEDIA_BUCKET" "$UPLOAD_INIT" roles/storage.objectViewer
 bucket_role "$DERIVED_BUCKET" "$UPLOAD_INIT" roles/storage.objectViewer
+# get_file signs GET URLs for the original and thumbnail, so it needs to read both.
+bucket_role "$MEDIA_BUCKET" "$GET_FILE" roles/storage.objectViewer
+bucket_role "$DERIVED_BUCKET" "$GET_FILE" roles/storage.objectViewer
 
 # process_upload reads each new original to hash it and deletes rejected ones. objectUser is the
 # narrowest predefined role that includes delete.
@@ -60,11 +64,15 @@ bucket_role "$MEDIA_BUCKET" "$PROCESS_UPLOAD" roles/storage.objectUser
 project_role() {
   retry gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="$1" --role="$2" --condition=None >/dev/null
 }
-# Firestore roles can only be granted on the project. upload_init only reads (the duplicate check);
-# process_upload also merges the base record.
+# Firestore roles can only be granted on the project. upload_init and get_file only read (the duplicate
+# check, the file's summary); process_upload also merges the base record.
 project_role "serviceAccount:$UPLOAD_INIT" roles/datastore.viewer
 project_role "serviceAccount:$PROCESS_UPLOAD" roles/datastore.user
+project_role "serviceAccount:$GET_FILE" roles/datastore.viewer
 # Signing without a key file goes through the IAM credentials API, which needs Token Creator on itself.
+# get_file and upload_init both sign URLs.
+gcloud iam service-accounts add-iam-policy-binding "$GET_FILE" --project="$PROJECT_ID" \
+  --member="serviceAccount:$GET_FILE" --role=roles/iam.serviceAccountTokenCreator >/dev/null
 gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PROJECT_ID" \
   --member="serviceAccount:$UPLOAD_INIT" --role=roles/iam.serviceAccountTokenCreator >/dev/null
 
@@ -91,4 +99,15 @@ else
   echo "process-upload isn't deployed yet: deploy it, then re-run this script for its Invoker grant." >&2
 fi
 
-echo "Ingestion resources ready: gs://$MEDIA_BUCKET, gs://$DERIVED_BUCKET, $UPLOAD_INIT, $PROCESS_UPLOAD"
+# The gateway calls each HTTP function as its own account (infra/gateway/README.md), and only it may.
+GATEWAY="ecoguard-gateway@$PROJECT_ID.iam.gserviceaccount.com"
+for function in upload-init get-file; do
+  if gcloud run services describe "$function" --project="$PROJECT_ID" --region="$REGION" >/dev/null 2>&1; then
+    gcloud run services add-iam-policy-binding "$function" --project="$PROJECT_ID" --region="$REGION" \
+      --member="serviceAccount:$GATEWAY" --role=roles/run.invoker >/dev/null
+  else
+    echo "$function isn't deployed yet: deploy it, then re-run this script for the gateway's Invoker grant." >&2
+  fi
+done
+
+echo "Ingestion resources ready: gs://$MEDIA_BUCKET, gs://$DERIVED_BUCKET, $UPLOAD_INIT, $PROCESS_UPLOAD, $GET_FILE"
