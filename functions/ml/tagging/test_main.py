@@ -83,7 +83,7 @@ def gcs(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def config(monkeypatch):
-    monkeypatch.setattr(main, "model_config", mock.Mock(get=lambda: CONFIG))
+    monkeypatch.setattr(main.detect, "model_config", lambda db: CONFIG)
 
 
 @pytest.fixture(autouse=True)

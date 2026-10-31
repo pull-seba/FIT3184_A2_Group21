@@ -29,7 +29,6 @@ from ecoguard_ml import BadImage, detect
 
 db = firestore.Client()  # created once per instance, reused across events
 gcs = storage.Client()
-model_config = detect.ModelConfig(db)
 
 FILE_ID = re.compile(r"[0-9a-f]{64}")
 MEDIA_KEY = re.compile(r"(?P<file_id>[0-9a-f]{64})\.(?P<ext>[a-z0-9]+)")
@@ -97,7 +96,7 @@ def write_tags(doc, detected: dict[str, int], version: str):
 
 def tag_file(file_id: str, images: list[bytes]):
     """Tag one file from its image, or from a video's frames."""
-    config = model_config.get()
+    config = detect.model_config(db)
     doc = db.collection("files").document(file_id)
     record = doc.get().to_dict() or {}
     if (

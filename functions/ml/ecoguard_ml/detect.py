@@ -8,7 +8,6 @@ checks this file gives the same tags as the bake-off on all 140 test photos.
 
 import io
 import json
-import time
 from pathlib import Path
 
 from PIL import Image, ImageOps
@@ -21,7 +20,6 @@ from ecoguard_ml import BadImage, rekognition
 REKOGNITION_FORMATS = {"JPEG", "PNG"}
 MAX_BYTES = 5 * 1024 * 1024
 MAX_SIDE = 2048
-CONFIG_TTL_S = 300  # re-read config/model every 5 minutes
 
 # config/model's "detector" names one of these. A new model is a new entry
 # here plus a config change; thresholds alone need no code change.
@@ -138,27 +136,11 @@ def analyse(data: bytes, config: dict) -> tuple[dict[str, int], list[dict]]:
     return count_tags(labels, config), labels
 
 
-class ModelConfig:
-    """config/model from Firestore, read on first use and again once it is
-    CONFIG_TTL_S old, so a pushed change reaches running functions within
-    five minutes without a redeploy."""
-
-    def __init__(self, db, ttl_s=CONFIG_TTL_S, clock=time.monotonic):
-        self._db = db
-        self._ttl_s = ttl_s
-        self._clock = clock
-        self._config = None
-        self._read_at = 0.0
-
-    def get(self) -> dict:
-        now = self._clock()
-        if self._config is None or now - self._read_at >= self._ttl_s:
-            snapshot = self._db.document("config/model").get()
-            if not snapshot.exists:
-                raise RuntimeError(
-                    "config/model is missing: run "
-                    "functions/ml/config/push_model_config.py"
-                )
-            self._config = snapshot.to_dict()
-            self._read_at = now
-        return self._config
+def model_config(db) -> dict:
+    snapshot = db.document("config/model").get()
+    if not snapshot.exists:
+        raise RuntimeError(
+            "config/model is missing: run "
+            "functions/ml/config/push_model_config.py"
+        )
+    return snapshot.to_dict()

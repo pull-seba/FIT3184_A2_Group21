@@ -195,21 +195,12 @@ def fake_db(config):
     return db
 
 
-def test_config_is_read_once_then_again_after_five_minutes():
+def test_config_is_read_from_firestore():
     db = fake_db(CONFIG)
-    now = [1000.0]
-    model_config = detect.ModelConfig(db, clock=lambda: now[0])
-
-    assert model_config.get() == CONFIG
-    now[0] += 299
-    model_config.get()
-    assert db.document.return_value.get.call_count == 1
-    now[0] += 1
-    model_config.get()
-    assert db.document.return_value.get.call_count == 2
+    assert detect.model_config(db) == CONFIG
     db.document.assert_called_with("config/model")
 
 
 def test_missing_config_says_how_to_push_it():
     with pytest.raises(RuntimeError, match="push_model_config"):
-        detect.ModelConfig(fake_db(None)).get()
+        detect.model_config(fake_db(None))
