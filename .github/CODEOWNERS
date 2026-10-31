@@ -2,19 +2,19 @@
 # Ownership is enforced only when branch protection on main turns on "Require review from Code Owners".
 # Later lines override earlier ones.
 
-*                                         @member1 @xDylxnn @member3 @jenul-ferdinand
+*                                         @member1 @xDylxnn @dandom2019 @jenul-ferdinand
 
 # Shared agreements: any change needs the whole team
-/CLAUDE.md                                @member1 @xDylxnn @member3 @jenul-ferdinand
-/.claude/                                 @member1 @xDylxnn @member3 @jenul-ferdinand
-/docs/                                    @member1 @xDylxnn @member3 @jenul-ferdinand
+/CLAUDE.md                                @member1 @xDylxnn @dandom2019 @jenul-ferdinand
+/.claude/                                 @member1 @xDylxnn @dandom2019 @jenul-ferdinand
+/docs/                                    @member1 @xDylxnn @dandom2019 @jenul-ferdinand
 
 # Contracts
 /docs/contracts/firestore-schema.md       @xDylxnn
 /docs/contracts/storage-layout.md         @xDylxnn
 /docs/contracts/api-routes.md             @member1
-/docs/contracts/events.md                 @member1 @xDylxnn @member3
-/shared/tags.json                         @member3
+/docs/contracts/events.md                 @member1 @xDylxnn @dandom2019
+/shared/tags.json                         @dandom2019
 /shared/python/ecoguard_common/           @xDylxnn
 /shared/python/ecoguard_common/auth.py    @member1
 /shared/python/ecoguard_common/tag_match.py @jenul-ferdinand
@@ -33,9 +33,9 @@
 /frontend/src/app/components/gallery/actions/delete/ @xDylxnn
 
 # Member 3: ML and detection
-/functions/ml/                            @member3
-/frontend/src/app/pages/query-by-file/    @member3
-/frontend/src/app/pages/lost-pet/         @member3
+/functions/ml/                            @dandom2019
+/frontend/src/app/pages/query-by-file/    @dandom2019
+/frontend/src/app/pages/lost-pet/         @dandom2019
 
 # Member 4: search and chatbot
 /functions/search/                        @jenul-ferdinand

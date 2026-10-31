@@ -1,6 +1,6 @@
 {
-  "_note": "Owner: member 3. Starter vocabulary from the spec; member 3 confirms it and replaces model_label_map with the real labels of the chosen models. Tag names are lowercase and singular and may contain spaces. Any label not in model_label_map is dropped.",
-  "version": 1,
+  "_note": "Owner: member 3. Tag names are lowercase and singular and may contain spaces. model_label_map translates detector labels to tags, matched case-insensitively; any label not in it is dropped. v2 (28 Oct): Rekognition label names confirmed from a 30-image pilot (tools/testset). Frog, Amphibian, Hare, Canine, Coyote and Wolf are left out on purpose because they also fire on lookalikes (tree frogs, hares, foxes vs dogs).",
+  "version": 2,
   "tags": [
     { "name": "fox", "group": "pest" },
     { "name": "rabbit", "group": "pest" },
@@ -13,13 +13,13 @@
   "model_label_map": {
     "fox": "fox",
     "red fox": "fox",
-    "rabbit": "rabbit",
-    "european rabbit": "rabbit",
-    "pig": "feral pig",
-    "wild boar": "feral pig",
-    "cane toad": "cane toad",
-    "toad": "cane toad",
     "cat": "cat",
-    "dog": "dog"
+    "dog": "dog",
+    "rabbit": "rabbit",
+    "pig": "feral pig",
+    "hog": "feral pig",
+    "boar": "feral pig",
+    "wild boar": "feral pig",
+    "toad": "cane toad"
   }
 }
