@@ -1,5 +1,5 @@
 {
-  "version": "2026-10-29.1",
+  "version": "2026-10-31.1",
   "detector": "rekognition",
   "detector_region": "us-east-1",
   "request_min_confidence": 50,
