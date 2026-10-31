@@ -121,6 +121,29 @@ def test_rejects_request_without_gateway_claims():
     assert status == 401
 
 
+def test_answers_cors_preflight_without_a_token():
+    with app.test_request_context(method="OPTIONS"):
+        body, status, headers = main.handler(flask.request)
+    assert (body, status) == ("", 204)
+    assert headers["Access-Control-Allow-Origin"] == "*"
+    assert "POST" in headers["Access-Control-Allow-Methods"]
+    assert "Authorization" in headers["Access-Control-Allow-Headers"]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"json": init_body()},  # 401
+        {"data": "not json", "headers": gateway_headers()},  # 400
+        {"json": init_body(), "headers": gateway_headers()},  # 200
+    ],
+)
+def test_every_response_allows_the_app_origin(kwargs):
+    with app.test_request_context(method="POST", **kwargs):
+        _, _, headers = main.handler(flask.request)
+    assert headers["Access-Control-Allow-Origin"] == "*"
+
+
 def test_rejects_body_that_is_not_json():
     _, status = call(data="not json", headers=gateway_headers())
     assert status == 400
