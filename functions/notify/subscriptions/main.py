@@ -1,7 +1,7 @@
 """subscriptions: reads and replaces the caller's alert tags.
 
 Owner: member 1. Rubric: 2.3.3. Routes: GET and PUT
-/notifications/subscriptions (see README.md).
+/notifications/subscriptions.
 
 A person's alert tags are the filter policy on their SNS email subscription,
 so SNS stays the one place they live (docs/decisions.md, 30 Oct). The email
