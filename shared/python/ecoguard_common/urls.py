@@ -26,13 +26,8 @@ KEYS = {
 
 
 def file_id_from_url(url: str) -> str:
-    """The file ID in a URL of an original, thumbnail or frame: https:// in
-    either form or gs://, signed or not, URL-encoded or not.
-
-    Raises ValueError for any other URL. The message never repeats the URL:
-    callers may log it, and a signed URL must not reach the logs."""
-    # Only the scheme, host and path count, so a signature in the query
-    # string makes no difference.
+    """Raises ValueError for any URL that isn't ours. The message never repeats
+    the URL: callers may log it, and a signed URL must not reach the logs."""
     parts = urlsplit(url.strip())
     path = unquote(parts.path)
     if parts.scheme == "gs":
