@@ -39,8 +39,6 @@ def log(severity: str, message: str, **fields):
 
 
 def file_id_or_none(url: str) -> str | None:
-    # storage-layout.md says file_id_from_url rejects URLs that aren't ours
-    # but not whether it raises or returns None.
     try:
         return file_id_from_url(url)
     except ValueError:
