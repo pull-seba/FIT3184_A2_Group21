@@ -52,3 +52,65 @@ app-tag-chips {
     );
   }
 }
+
+// Auth pages and the top bar (member 1). Scoped to .card and .topbar so the plain
+// button and input rules don't restyle the Material components; colours come from the theme.
+.card {
+  max-width: 420px;
+  margin: 48px auto;
+  padding: 28px;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+
+  h1 { margin: 0 0 8px; font-size: 1.4rem; color: var(--mat-sys-primary); }
+  h2 { font-size: 1.15rem; }
+  form { display: grid; gap: 12px; }
+  label { display: grid; gap: 4px; font-weight: 500; }
+  input {
+    padding: 10px;
+    font: inherit;
+    color: inherit;
+    background: var(--mat-sys-surface);
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 8px;
+  }
+  small { color: var(--mat-sys-on-surface-variant); margin-top: -6px; }
+  a { color: var(--mat-sys-primary); }
+}
+
+.card button,
+.topbar button {
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--mat-sys-on-primary);
+  background: var(--mat-sys-primary);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:disabled { opacity: 0.6; cursor: wait; }
+  &.link { padding: 0; color: var(--mat-sys-primary); background: none; text-decoration: underline; }
+}
+
+.message { padding: 10px; border-radius: 8px; }
+.message.error { background: var(--mat-sys-error-container); color: var(--mat-sys-on-error-container); }
+.message.success { background: var(--mat-sys-tertiary-container); color: var(--mat-sys-on-tertiary-container); }
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--mat-sys-surface-container);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  .brand { font-weight: 700; text-decoration: none; color: var(--mat-sys-primary); }
+  button { margin-left: 8px; }
+}
+
+@media (max-width: 480px) {
+  .card { margin: 16px; padding: 20px; }
+}
