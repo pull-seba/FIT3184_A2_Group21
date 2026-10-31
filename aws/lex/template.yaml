@@ -1,0 +1,279 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Aussie EcoGuard - the Lex chatbot and the Lambda that runs its searches through the GCP gateway (rubric 2.2.5, cross-cloud link 2). Owner: member 4."
+
+Resources:
+  # Lex must have a role to assume, but a text-only bot uses it for nothing (no Polly, no Comprehend).
+  BotRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ecoguard-chat-bot
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lexv2.amazonaws.com
+            Action: sts:AssumeRole
+
+  FulfilmentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ecoguard-chat-fulfilment
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      # Same as aws/iam/chat-fulfilment.json: write its own logs, nothing else.
+      Policies:
+        - PolicyName: ecoguard-chat-fulfilment
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ecoguard-chat-fulfilment:*
+
+  FulfilmentLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/ecoguard-chat-fulfilment
+      RetentionInDays: 14
+
+  Fulfilment:
+    Type: AWS::Lambda::Function
+    DependsOn: FulfilmentLogs
+    Properties:
+      FunctionName: ecoguard-chat-fulfilment
+      Runtime: python3.12
+      Handler: app.handler
+      Role: !GetAtt FulfilmentRole.Arn
+      # Lex waits at most 30 s, and a cold Cloud Run function can take a few seconds.
+      Timeout: 25
+      Environment:
+        Variables:
+          API_BASE: https://ecoguard-gw-2qp1rpih.ue.gateway.dev
+      Code: .
+
+  FulfilmentPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Fulfilment
+      Action: lambda:InvokeFunction
+      Principal: lexv2.amazonaws.com
+      SourceArn: !Sub arn:aws:lex:${AWS::Region}:${AWS::AccountId}:bot-alias/${ChatBot}/TSTALIASID
+
+  ChatBot:
+    Type: AWS::Lex::Bot
+    Properties:
+      Name: ecoguard-chat
+      Description: Finds wildlife photos and lost pets for signed-in EcoGuard users
+      RoleArn: !GetAtt BotRole.Arn
+      DataPrivacy:
+        ChildDirected: false
+      IdleSessionTTLInSeconds: 300
+      AutoBuildBotLocales: true
+      BotLocales:
+        - LocaleId: en_AU
+          NluConfidenceThreshold: 0.4
+          SlotTypes:
+            # Values are the tag names in shared/tags.json (test_app.py checks); synonyms are what people type.
+            - Name: Species
+              ValueSelectionSetting:
+                ResolutionStrategy: TOP_RESOLUTION
+              SlotTypeValues:
+                - SampleValue: { Value: fox }
+                  Synonyms: [{ Value: foxes }, { Value: red fox }, { Value: red foxes }]
+                - SampleValue: { Value: rabbit }
+                  Synonyms: [{ Value: rabbits }, { Value: bunny }, { Value: bunnies }]
+                - SampleValue: { Value: feral pig }
+                  Synonyms:
+                    - { Value: feral pigs }
+                    - { Value: pig }
+                    - { Value: pigs }
+                    - { Value: wild pig }
+                    - { Value: wild pigs }
+                    - { Value: boar }
+                    - { Value: boars }
+                    - { Value: hog }
+                    - { Value: hogs }
+                - SampleValue: { Value: cane toad }
+                  Synonyms: [{ Value: cane toads }, { Value: toad }, { Value: toads }]
+                - SampleValue: { Value: cat }
+                  Synonyms: [{ Value: cats }, { Value: kitten }, { Value: kittens }, { Value: kitty }]
+                - SampleValue: { Value: dog }
+                  Synonyms: [{ Value: dogs }, { Value: puppy }, { Value: puppies }, { Value: pup }]
+            # Values are lost_pet_species in shared/tags.json.
+            - Name: PetSpecies
+              ValueSelectionSetting:
+                ResolutionStrategy: TOP_RESOLUTION
+              SlotTypeValues:
+                - SampleValue: { Value: cat }
+                  Synonyms: [{ Value: kitten }, { Value: kitty }]
+                - SampleValue: { Value: dog }
+                  Synonyms: [{ Value: puppy }, { Value: pup }]
+            # Any colour passes through as typed; the samples only teach Lex what a colour looks like.
+            - Name: Colour
+              ValueSelectionSetting:
+                ResolutionStrategy: ORIGINAL_VALUE
+              SlotTypeValues:
+                - SampleValue: { Value: ginger }
+                - SampleValue: { Value: orange }
+                - SampleValue: { Value: black }
+                - SampleValue: { Value: white }
+                - SampleValue: { Value: black and white }
+                - SampleValue: { Value: grey }
+                - SampleValue: { Value: brown }
+                - SampleValue: { Value: tabby }
+                - SampleValue: { Value: tortoiseshell }
+                - SampleValue: { Value: calico }
+                - SampleValue: { Value: cream }
+                - SampleValue: { Value: golden }
+          Intents:
+            - Name: FindPhotos
+              Description: Photos and videos of one species, with an optional minimum count and date
+              SampleUtterances:
+                - Utterance: "Show me all photos of {species} spotted {date}"
+                - Utterance: "Show me all photos of {species}"
+                - Utterance: "Show me all the {species} spotted {date}"
+                - Utterance: "Show me photos of {species} from {date}"
+                - Utterance: "Show me photos of {species} taken {date}"
+                - Utterance: "Show me photos of {species} {date}"
+                - Utterance: "Show me videos of {species}"
+                - Utterance: "Show me videos of {species} from {date}"
+                - Utterance: "Show me {species}"
+                - Utterance: "Show me {species} from {date}"
+                - Utterance: "Show me {species} spotted {date}"
+                - Utterance: "Show me {species} {date}"
+                - Utterance: "Find {species}"
+                - Utterance: "Find photos of {species} {date}"
+                - Utterance: "Photos of {species} {date}"
+                - Utterance: "Were there any {species} {date}"
+                - Utterance: "Any {species} {date}"
+                - Utterance: "Any {species} spotted {date}"
+                - Utterance: "What {species} were seen {date}"
+                - Utterance: "{species} {date}"
+                - Utterance: "{species} sightings {date}"
+                - Utterance: "Show me photos with at least {count} {species}"
+                - Utterance: "Show me photos with at least {count} {species} from {date}"
+                - Utterance: "Find photos with {count} {species}"
+                - Utterance: "Which photos have {count} or more {species}"
+                - Utterance: "Show me photos"
+              SlotPriorities:
+                - Priority: 1
+                  SlotName: species
+                - Priority: 2
+                  SlotName: count
+                - Priority: 3
+                  SlotName: date
+              Slots:
+                - Name: species
+                  SlotTypeName: Species
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MaxRetries: 2
+                      MessageGroupsList:
+                        - Message:
+                            PlainTextMessage:
+                              Value: Which animal? I can search for foxes, rabbits, feral pigs, cane toads, cats and dogs.
+                - Name: count
+                  SlotTypeName: AMAZON.Number
+                  ValueElicitationSetting:
+                    SlotConstraint: Optional
+                - Name: date
+                  SlotTypeName: AMAZON.Date
+                  ValueElicitationSetting:
+                    SlotConstraint: Optional
+              FulfillmentCodeHook:
+                Enabled: true
+
+            - Name: FindLostPet
+              Description: Recent public sightings that could be a lost cat or dog
+              SampleUtterances:
+                - Utterance: "Help me find a lost {colour} {pet}"
+                - Utterance: "Help me find a lost {pet}"
+                - Utterance: "Help me find my {colour} {pet}"
+                - Utterance: "Help me find my {pet}"
+                - Utterance: "I lost my {colour} {pet}"
+                - Utterance: "I lost my {pet}"
+                - Utterance: "My {colour} {pet} is missing"
+                - Utterance: "My {pet} is missing"
+                - Utterance: "Has anyone seen a {colour} {pet}"
+                - Utterance: "Lost {colour} {pet}"
+                - Utterance: "I'm looking for my lost {pet}"
+                - Utterance: "Help me find a lost pet"
+                - Utterance: "My pet is missing"
+              SlotPriorities:
+                - Priority: 1
+                  SlotName: pet
+                - Priority: 2
+                  SlotName: colour
+              Slots:
+                - Name: pet
+                  SlotTypeName: PetSpecies
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MaxRetries: 2
+                      MessageGroupsList:
+                        - Message:
+                            PlainTextMessage:
+                              Value: Is it a cat or a dog?
+                - Name: colour
+                  SlotTypeName: Colour
+                  ValueElicitationSetting:
+                    SlotConstraint: Optional
+              FulfillmentCodeHook:
+                Enabled: true
+
+            - Name: Help
+              Description: Greetings and questions about what the bot can do
+              SampleUtterances:
+                - Utterance: "Help"
+                - Utterance: "Hi"
+                - Utterance: "Hello"
+                - Utterance: "What can you do"
+                - Utterance: "What can I ask you"
+                - Utterance: "How does this work"
+              IntentClosingSetting:
+                ClosingResponse:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: >-
+                            Hi! I search EcoGuard's wildlife photos and videos. Try "Show me all photos of foxes
+                            spotted yesterday", "Show me photos with at least 2 feral pigs" or "Help me find a
+                            lost ginger cat".
+
+            - Name: FallbackIntent
+              ParentIntentSignature: AMAZON.FallbackIntent
+              IntentClosingSetting:
+                ClosingResponse:
+                  MessageGroupsList:
+                    - Message:
+                        PlainTextMessage:
+                          Value: >-
+                            Sorry, I didn't catch that. Try "Show me photos of foxes from last week" or "Help me
+                            find a lost ginger cat".
+      # The widget talks to the test alias, which always serves the latest build of the draft bot.
+      TestBotAliasSettings:
+        BotAliasLocaleSettings:
+          - LocaleId: en_AU
+            BotAliasLocaleSetting:
+              Enabled: true
+              CodeHookSpecification:
+                LambdaCodeHook:
+                  CodeHookInterfaceVersion: "1.0"
+                  LambdaArn: !GetAtt Fulfilment.Arn
+
+Outputs:
+  BotId:
+    Value: !Ref ChatBot
+  BotAliasArn:
+    Description: Member 1 passes this to the ecoguard-auth stack as LexBotAliasArn
+    Value: !Sub arn:aws:lex:${AWS::Region}:${AWS::AccountId}:bot-alias/${ChatBot}/TSTALIASID
