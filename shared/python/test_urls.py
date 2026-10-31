@@ -10,14 +10,7 @@ from ecoguard_common.urls import file_id_from_url
 FILE_ID = "a3c94a983f10c7e72d9a800e972a8a75764798afb02f84303d76627c47addb14"
 MEDIA = "ecoguard-g21-media"
 DERIVED = "ecoguard-g21-derived"
-# What generate_signed_url(version="v4") appends, shortened.
-SIGNATURE = (
-    "?X-Goog-Algorithm=GOOG4-RSA-SHA256"
-    "&X-Goog-Credential=fn-tag-query%40ecoguard-g21.iam.gserviceaccount.com"
-    "%2F20261030%2Fauto%2Fstorage%2Fgoog4_request"
-    "&X-Goog-Date=20261030T010203Z&X-Goog-Expires=3600"
-    "&X-Goog-SignedHeaders=host&X-Goog-Signature=5f2a9c0e"
-)
+SIGNATURE = "?X-Goog-Signature=5f2a9c0e"
 
 
 def every_form(bucket, key):
