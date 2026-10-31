@@ -1,0 +1,151 @@
+:host {
+  display: block;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+.tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container);
+  outline: 2px solid transparent;
+}
+
+.tile.selected {
+  outline-color: var(--mat-sys-primary);
+}
+
+.preview {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  border: 0;
+  background: #000;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: zoom-in;
+}
+
+.preview:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -2px;
+}
+
+.preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.note {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  font: var(--mat-sys-body-small);
+}
+
+.badge {
+  position: absolute;
+  bottom: 8px;
+  color: #fff;
+  background: rgb(0 0 0 / 60%);
+  border-radius: var(--mat-sys-corner-full);
+}
+
+.badge.video {
+  left: 8px;
+}
+
+.badge.score {
+  right: 8px;
+  padding: 2px 8px;
+  font: var(--mat-sys-label-medium);
+}
+
+.select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgb(0 0 0 / 55%);
+  border-bottom-right-radius: var(--mat-sys-corner-medium);
+}
+
+.details {
+  display: grid;
+  gap: 4px;
+  padding: 8px 12px 12px;
+}
+
+time {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.select-all {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.placeholder {
+  aspect-ratio: 4 / 3;
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder {
+    animation: none;
+  }
+}
+
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+}
+
+.actions {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 8px 16px;
+  border-radius: var(--mat-sys-corner-full);
+  background: var(--mat-sys-surface-container-highest);
+  box-shadow: var(--mat-sys-level3);
+}
+
+.count {
+  margin-right: auto;
+  font: var(--mat-sys-label-large);
+}

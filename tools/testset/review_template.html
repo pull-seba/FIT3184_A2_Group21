@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EcoGuard · Ground truth review</title>
+<style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#20362e;background:#f2f5f1;accent-color:#247350}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button,select{cursor:pointer}button{border:1px solid #ccd8cf;border-radius:8px;padding:10px 16px;background:white;color:#20362e;font-weight:650}button:hover{background:#eef5ef}button:disabled{opacity:.5;cursor:default}.primary{background:#246443;color:white;border-color:#246443}.primary:hover{background:#194c32}
+header{background:#fff;position:sticky;top:0;z-index:3;border-bottom:1px solid #d9e2d9;padding:18px 28px 14px}.top{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}h1{font-size:24px;letter-spacing:-.6px;margin:3px 0}.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:10px;font-weight:750;color:#588064}.actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.hint{font-size:13px;color:#5a6d61;margin:9px 0 0}.filters{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-top:16px}.filters label{font-size:12px;display:grid;gap:5px}.filters input,.filters select{height:36px;min-width:150px;padding:6px 10px;border:1px solid #d3ddd3;border-radius:7px;background:#fff}.filters input{min-width:220px}#save-state{font-size:13px;font-weight:600}#message{margin:12px 0 0;font-size:13px;white-space:pre-wrap}#message:empty{display:none}.error{color:#a82d24}main{padding:8px 28px 40px}h2{font-size:20px;margin:25px 0 13px;display:flex;align-items:center;gap:12px}h2 small{font-size:12px;color:#64796a;font-weight:500}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}.card{background:#fff;border:1px solid #d8e2d8;border-radius:12px;overflow:hidden;box-shadow:0 2px 4px #20362e05}.card.changed{border-color:#c39a40;box-shadow:0 0 0 1px #c39a40}.card.rejected .photo{opacity:.45}.photo{display:block;background:#e7ece5;position:relative}.photo img{display:block;width:100%;height:230px;object-fit:contain}.photo span{position:absolute;right:10px;bottom:10px;font-size:11px;color:#fff;background:#20362ed9;padding:5px 8px;border-radius:5px}.body{padding:15px}.title{display:flex;justify-content:space-between;align-items:center;gap:8px}.title strong{font-size:14px}.badge{font-size:10px;padding:4px 7px;border-radius:20px;background:#edf3ed;color:#41684f}.badge.review{background:#fff0cd;color:#86600d}.badge.reject{background:#f9e8e5;color:#9f4137}.meta{font-size:11px;color:#6a7e6f;margin:7px 0 14px}.fields{display:grid;grid-template-columns:90px 1fr;gap:12px}.field{display:grid;gap:6px;font-size:12px;font-weight:600}.field input,.field select{width:100%;min-width:0;height:37px;border:1px solid #cedace;border-radius:7px;background:#fff;padding:7px}.field input:read-only{background:#f2f5f1}fieldset{border:0;padding:0;margin:15px 0 0}legend{font-size:12px;font-weight:600;margin-bottom:8px}.tags{display:flex;gap:7px;flex-wrap:wrap}.tag{position:relative;display:flex;align-items:center;gap:5px;border:1px solid #d9e2d7;border-radius:6px;padding:6px 8px;font-size:11px;cursor:pointer;background:#fafcf9}.tag:has(input:checked){background:#e6f2e6;border-color:#8db699;color:#205334}.tag input{margin:0}.legacy{color:#a84b2f;background:#fff1e9}.source{display:block;font-size:11px;color:#53765f;margin-top:14px}.empty{padding:35px;color:#64796a}input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #78a58c;outline-offset:2px}
+@media(max-width:650px){header{position:static;padding:18px}main{padding:4px 18px 30px}.grid{grid-template-columns:1fr}.filters input{min-width:160px}.photo img{height:260px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><div><div class="eyebrow">Aussie EcoGuard · Test set</div><h1>Ground truth review</h1></div>
+    <div class="actions"><span id="save-state" role="status">Loading…</span><button id="download" type="button">Download CSV</button><button id="save" class="primary" type="button" disabled>Save CSV</button></div>
+  </div>
+  <p class="hint" id="save-hint">Choose counts and condition tags, then save. Click a photo to inspect it at full size.</p>
+  <div class="filters">
+    <label>Animal group<select id="folder"><option value="">All groups</option></select></label>
+    <label>Review status<select id="status"><option value="all">All statuses</option><option value="">Unverified</option><option value="review">Needs review</option><option value="ok">Human verified</option><option value="reject">Rejected</option><option value="ai">AI reviewed</option><option value="spot">Spot check</option></select></label>
+    <label>Find an image<input id="search" type="search" placeholder="Search filename…"></label>
+    <span class="hint" id="visible-count"></span>
+  </div>
+  <p id="message" role="status" aria-live="polite"></p>
+</header>
+<main id="groups"></main>
+<script id="dataset" type="application/json">__DATASET_JSON__</script>
+<script>
+'use strict';
+let dataset = JSON.parse(document.getElementById('dataset').textContent);
+let rows = dataset.rows, fields = dataset.fields;
+let originals = new Map(rows.map(row => [row.filename, {...row}]));
+let online = false, saving = false;
+const editable = ['true_count', 'condition', 'verified'];
+const tags = ['clear', 'night', 'other'];
+const statuses = {'':'Unverified',ok:'Human verified',review:'Needs review',reject:'Rejected',ai:'AI reviewed',spot:'Spot check'};
+const $ = id => document.getElementById(id);
+function make(tag, text, className) { const node = document.createElement(tag); if(text !== undefined) node.textContent = text; if(className) node.className = className; return node; }
+function changed(row) { const original = originals.get(row.filename); return editable.some(key => row[key] !== original[key]); }
+function updates() { return rows.filter(changed).map(row => ({filename:row.filename,before:Object.fromEntries(editable.map(key => [key, originals.get(row.filename)[key]])),changes:Object.fromEntries(editable.filter(key => row[key] !== originals.get(row.filename)[key]).map(key => [key,row[key]]))})); }
+function message(text, error=false) { $('message').textContent = text; $('message').className = error ? 'error' : ''; }
+function updateState() { const total = rows.filter(changed).length; $('save-state').textContent = saving ? 'Saving…' : total ? `${total} unsaved image${total===1?'':'s'}` : 'No unsaved changes'; $('save').disabled = saving || !total; $('download').disabled = saving; document.querySelectorAll('.card').forEach(card => {const row = rows[Number(card.dataset.index)];card.classList.toggle('changed',changed(row));card.classList.toggle('rejected',row.verified==='reject');const badge=card.querySelector('.badge');badge.textContent=statuses[row.verified]||row.verified;badge.className=`badge ${row.verified}`;}); }
+function setLabel(row,key,value) { row[key]=value; message('');updateState(); }
+function render() {
+  const selectedFolder=$('folder').value, selectedStatus=$('status').value, search=$('search').value.trim().toLowerCase();
+  const groups = new Map(); let total=0;
+  rows.forEach((row,index) => { const folder=row.filename.split('/')[0]; if(selectedFolder && folder!==selectedFolder || selectedStatus!=='all' && row.verified!==selectedStatus || !row.filename.toLowerCase().includes(search))return; if(!groups.has(folder))groups.set(folder,[]);groups.get(folder).push({row,index});total++; });
+  const root=$('groups');root.replaceChildren();$('visible-count').textContent=`${total} of ${rows.length} images`;
+  if(!total)root.append(make('p','No images match these filters.','empty'));
+  groups.forEach((items,folder) => {
+    const heading=make('h2',folder.replaceAll('_',' ')); heading.append(make('small',`${items.length} images`));root.append(heading);
+    const grid=make('div',undefined,'grid');root.append(grid);
+    items.forEach(({row,index})=>{
+      const card=make('article',undefined,'card');card.dataset.index=index;card.setAttribute('aria-label',row.filename);grid.append(card);
+      const link=make('a',undefined,'photo');link.href='images/'+row.filename.split('/').map(encodeURIComponent).join('/');link.target='_blank';link.rel='noopener';link.setAttribute('aria-label',`Open ${row.filename} full size`);
+      const image=make('img');image.src=link.href;image.alt=row.filename;image.loading='lazy';link.append(image,make('span','Open full size ↗'));card.append(link);
+      const body=make('div',undefined,'body');card.append(body);const title=make('div',undefined,'title');title.append(make('strong',row.filename.split('/').pop()),make('span',undefined,'badge'));body.append(title,make('p',`${row.common_name || row.species} · Expected: ${row.species}`,'meta'));
+      const controls=make('div',undefined,'fields');body.append(controls);
+      const countLabel=make('label','Count','field'),count=make('input');count.type='number';count.min='0';count.step='1';count.value=row.true_count;count.readOnly=row.species==='none';count.setAttribute('aria-label',`Count for ${row.filename}`);count.addEventListener('input',()=>setLabel(row,'true_count',count.value));countLabel.append(count);controls.append(countLabel);
+      const statusLabel=make('label','Review status','field'),status=make('select');status.setAttribute('aria-label',`Review status for ${row.filename}`);Object.entries(statuses).forEach(([value,label])=>{const option=make('option',label);option.value=value;status.append(option);});status.value=row.verified;status.addEventListener('change',()=>setLabel(row,'verified',status.value));statusLabel.append(status);controls.append(statusLabel);
+      const group=make('fieldset');group.append(make('legend','Condition'));const tagList=make('div',undefined,'tags');group.append(tagList);body.append(group);
+      tags.forEach(tag=>{const label=make('label',undefined,'tag'),radio=make('input');radio.type='radio';radio.name=`condition-${index}`;radio.value=tag;radio.checked=row.condition===tag;radio.setAttribute('aria-label',`${tag} for ${row.filename}`);label.append(radio,make('span',tag));tagList.append(label);
+        radio.addEventListener('change',()=>{if(radio.checked)setLabel(row,'condition',tag);});
+      });
+      if(row.observation_url && /^https?:\/\//i.test(row.observation_url)){const source=make('a','View source observation ↗','source');source.href=row.observation_url;source.target='_blank';source.rel='noopener';body.append(source);}
+    });
+  });updateState();
+}
+function validate() {
+  for(const row of rows.filter(changed)){
+    const old=originals.get(row.filename);
+    if(row.true_count!==old.true_count && (row.true_count!=='' && !/^\d+$/.test(row.true_count) || row.species==='none' && row.true_count!=='0'))throw Error(`${row.filename}: count must be a nonnegative whole number; negative images require 0.`);
+    if(row.condition!==old.condition && !tags.includes(row.condition))throw Error(`${row.filename}: choose exactly one condition: clear, night or other.`);
+  }
+}
+function csvText() { const quote=value=>{const text=String(value??'');return /[",\r\n]/.test(text)?'"'+text.replaceAll('"','""')+'"':text;};return [fields,...rows.map(row=>fields.map(field=>row[field]))].map(values=>values.map(quote).join(',')).join('\r\n')+'\r\n'; }
+function downloadCSV() {validate();const url=URL.createObjectURL(new Blob([csvText()],{type:'text/csv;charset=utf-8'}));const link=make('a');link.href=url;link.download='ground_truth.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);message('CSV copy downloaded. Replace the original file with this copy to apply your edits.');}
+$('download').addEventListener('click',()=>{try{downloadCSV();}catch(error){message(error.message,true);}});
+$('save').addEventListener('click',async()=>{
+  if(!online){try{downloadCSV();}catch(error){message(error.message,true);}return;}
+  try{validate();saving=true;updateState();document.querySelectorAll('#groups input,#groups select').forEach(control=>control.disabled=true);
+    const response=await fetch('/api/ground-truth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({updates:updates()})});const result=await response.json();if(!response.ok)throw Error(result.error||'Save failed.');rows=result.rows;fields=result.fields;originals=new Map(rows.map(row=>[row.filename,{...row}]));message('Saved to ground_truth.csv.');
+  }catch(error){message(`${error.message} Your unsaved edits are still on screen.`,true);}
+  finally{saving=false;render();}
+});
+['folder','status','search'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',render));
+window.addEventListener('beforeunload',event=>{if(rows.some(changed)){event.preventDefault();event.returnValue='';}});
+async function start(){
+  if(location.protocol==='http:'||location.protocol==='https:'){
+    try{const response=await fetch('/api/ground-truth',{cache:'no-store'});if(!response.ok)throw Error('Unavailable');const result=await response.json();rows=result.rows;fields=result.fields;originals=new Map(rows.map(row=>[row.filename,{...row}]));online=true;}
+    catch{message('Direct saving is unavailable. You can download a CSV copy instead.',true);}
+  }
+  $('save').textContent=online?'Save CSV':'Download edited CSV';
+  $('save-hint').textContent=online?'Edit counts and condition tags, then Save CSV to update ground_truth.csv. Review status changes only when you choose it.':'Edit counts and condition tags, then download your CSV. Replace ground_truth.csv with the downloaded file to apply changes.';
+  [...new Set(rows.map(row=>row.filename.split('/')[0]))].forEach(folder=>{const option=make('option',folder.replaceAll('_',' '));option.value=folder;$('folder').append(option);});render();
+}
+start();
+</script>
+</body>
+</html>

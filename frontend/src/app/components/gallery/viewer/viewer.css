@@ -1,0 +1,31 @@
+.stage {
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+.stage img,
+.stage video {
+  display: block;
+  max-width: 90vw;
+  max-height: 72vh;
+  object-fit: contain;
+}
+
+.caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 24px 0;
+}
+
+time {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.spacer {
+  flex: 1;
+}
