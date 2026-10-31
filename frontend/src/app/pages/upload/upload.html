@@ -1,0 +1,46 @@
+<main class="upload">
+  <h1>Upload</h1>
+  <p class="hint">
+    Photos (JPEG, PNG or WebP, up to 20 MB) and videos (MP4 or MOV, up to 200 MB). Each file gets a
+    thumbnail and its animals tagged. A file that's already been uploaded, even under another name,
+    is skipped.
+  </p>
+
+  <div class="controls">
+    <label class="choose">
+      <mat-icon aria-hidden="true">upload_file</mat-icon>
+      Choose files
+      <input type="file" multiple [accept]="accepted" (change)="choose($event)" />
+    </label>
+    <mat-checkbox [checked]="isPublic()" (change)="isPublic.set($event.checked)">
+      Public: lost pet searches can match these
+    </mat-checkbox>
+  </div>
+
+  @if (rows().length > 0) {
+    <ul class="rows" aria-label="Uploads" aria-live="polite">
+      @for (row of rows(); track row) {
+        <li [class]="row.step()">
+          <mat-icon aria-hidden="true">{{ icons[row.step()] }}</mat-icon>
+          <span class="name">{{ row.file.name }}</span>
+          <span class="text">{{ row.text() }}</span>
+          @if (row.step() === 'uploading') {
+            <mat-progress-bar
+              mode="determinate"
+              [value]="row.percent()"
+              [attr.aria-label]="'Uploading ' + row.file.name"
+            />
+          } @else if (row.step() === 'checking' || row.step() === 'processing') {
+            <mat-progress-bar mode="indeterminate" [attr.aria-label]="row.text()" />
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  <h2>Uploaded</h2>
+  <app-gallery
+    [files]="uploaded()"
+    emptyMessage="Files you upload appear here once they're processed."
+  />
+</main>

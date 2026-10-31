@@ -6,7 +6,7 @@ Owner: member 2 · Rubric: 2.1.1
 Checks a file the browser wants to upload. If its SHA-256 matches a verified, active record, it answers `duplicate` with that file's `FileSummary` and no upload happens. Otherwise it returns a 15-minute signed `PUT` URL for `<sha256>.<ext>` in the media bucket, plus the exact headers the browser must send. It writes nothing; `process_upload` creates the record once the file arrives.
 
 ## Trigger
-HTTP through API Gateway: `POST /uploads/init` (see `docs/contracts/api-routes.md`).
+HTTP through API Gateway: `POST /uploads/init` (see `docs/contracts/api-routes.md`). Answers the browser's CORS preflight (`OPTIONS`, no token) with `204`, as `infra/gateway/README.md` asks.
 
 ## Service account
 `fn-upload-init@ecoguard-g21.iam.gserviceaccount.com`, created and granted by `infra/gcp/ingestion.sh`.
