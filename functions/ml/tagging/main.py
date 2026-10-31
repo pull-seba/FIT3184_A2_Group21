@@ -24,32 +24,17 @@ from google.api_core import exceptions
 from google.cloud import firestore, storage
 
 from ecoguard_common.logs import log
-from ecoguard_common.uploads import ACCEPTED
+from ecoguard_common.uploads import MEDIA_KEY, rejection_reason
 from ecoguard_ml import BadImage, detect
 
 db = firestore.Client()  # created once per instance, reused across events
 gcs = storage.Client()
 
 FILE_ID = re.compile(r"[0-9a-f]{64}")
-MEDIA_KEY = re.compile(r"(?P<file_id>[0-9a-f]{64})\.(?P<ext>[a-z0-9]+)")
 # The only fields tagging writes (firestore-schema.md). set() with this list
 # replaces exactly these, so an automatic tag the model no longer finds goes
 # away, and works whether or not process_upload has written the record yet.
 TAGGING_FIELDS = ["tags", "model_version", "tagged_at", "pipeline.tagging"]
-
-
-def upload_file_id(data: dict) -> str | None:
-    """The file ID if the object looks like an upload_init upload, else
-    None. process_upload deletes anything else, so tagging skips it."""
-    match = MEDIA_KEY.fullmatch(data["name"])
-    accepted = ACCEPTED.get(data.get("contentType", ""))
-    if not match or not accepted or accepted[0] != match["ext"]:
-        return None
-    if int(data["size"]) > accepted[1]:
-        return None
-    if not (data.get("metadata") or {}).get("uploaded-by"):
-        return None
-    return match["file_id"]
 
 
 def max_per_tag(per_image: list[dict[str, int]]) -> dict[str, int]:
@@ -131,11 +116,12 @@ def tag_file(file_id: str, images: list[bytes]):
 
 @functions_framework.cloud_event
 def on_upload(event):
-    data = event.data  # the Cloud Storage object; numbers arrive as strings
-    file_id = upload_file_id(data)
-    if file_id is None:
+    data = event.data
+    # process_upload deletes anything that fails this, so it isn't tagged.
+    if rejection_reason(data):
         log("INFO", "not a valid upload, ignored", key=data["name"])
         return
+    file_id = MEDIA_KEY.fullmatch(data["name"])["file_id"]
     if data["contentType"].startswith("video/"):
         log("INFO", "video: tagged from frames-ready", file_id=file_id)
         return
