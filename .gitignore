@@ -9,8 +9,9 @@ CLAUDE.local.md
 *credentials*.json
 service-account*.json
 
-# Shared package copied into a function folder for deploy
+# Shared packages copied into a function folder for deploy
 functions/**/ecoguard_common/
+functions/ml/*/ecoguard_ml/
 
 # Python
 __pycache__/

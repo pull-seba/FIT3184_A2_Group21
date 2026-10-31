@@ -1,0 +1,14 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DetectLabelsOnlyInUsEast1",
+      "Effect": "Allow",
+      "Action": "rekognition:DetectLabels",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "aws:RequestedRegion": "us-east-1" }
+      }
+    }
+  ]
+}
