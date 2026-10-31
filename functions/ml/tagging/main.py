@@ -1,17 +1,6 @@
 """tagging: species tags with counts for every uploaded image and video.
 
-Owner: member 3. Rubric 2.1.3. Triggers: docs/contracts/events.md.
-
-Two entry points in one folder, deployed as two functions (README.md):
-- on_upload: the media bucket's object-finalized event. Tags images and
-  returns at once for videos, which wait for their frames.
-- on_frames_ready: the frames-ready message process_upload publishes for a
-  video. Tags each frame and keeps each tag's highest count in any one frame.
-
-Both are idempotent (Eventarc and Pub/Sub can deliver twice): a repeat event
-for a file already tagged with the current config/model version does nothing.
-Errors that a retry could fix are raised so the event is delivered again;
-an image Rekognition can't read is marked pipeline.tagging = "failed".
+Owner: member 3. Rubric 2.1.3. Triggers: see README.md.
 """
 
 import base64
