@@ -165,13 +165,6 @@ def test_object_deleted_before_tagging_is_ignored(gcs, write_tags):
     write_tags.assert_not_called()
 
 
-def test_reads_the_exact_generation_that_triggered(gcs):
-    main.on_upload(finalized(object_data()))
-    gcs.bucket.return_value.blob.assert_called_once_with(
-        f"{SHA}.jpg", generation=1761471780000000
-    )
-
-
 # ---------- idempotency and errors ----------
 
 

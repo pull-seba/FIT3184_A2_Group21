@@ -126,9 +126,7 @@ def on_upload(event):
         log("INFO", "video: tagged from frames-ready", file_id=file_id)
         return
 
-    blob = gcs.bucket(data["bucket"]).blob(
-        data["name"], generation=int(data["generation"])
-    )
+    blob = gcs.bucket(data["bucket"]).blob(data["name"])
     try:
         content = blob.download_as_bytes()
     except exceptions.NotFound:
