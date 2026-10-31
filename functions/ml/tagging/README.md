@@ -54,7 +54,7 @@ cd functions/ml && python -m pytest tests      # ecoguard_ml, including all 140 
    ```bash
    infra/gcp/ml.sh
    ```
-2. In `aws/iam/rekognition-detect-trust.json`, replace `FN_TAGGING_UNIQUE_ID`, `FN_SEARCH_BY_FILE_UNIQUE_ID` and `AWS_ACCOUNT_ID`. None of them is a secret, so commit the real values. Then, with an AWS admin profile:
+2. With an AWS admin profile:
    ```bash
    aws iam create-role --role-name ecoguard-rekognition-detect \
      --assume-role-policy-document file://aws/iam/rekognition-detect-trust.json
@@ -69,7 +69,7 @@ cd functions/ml/tagging
 cp -r ../../../shared/python/ecoguard_common .   # gitignored copies of the shared packages
 cp -r ../ecoguard_ml .
 cp ../../../shared/tags.json ecoguard_common/    # the tag list and label map
-ROLE=arn:aws:iam::<aws-account-id>:role/ecoguard-rekognition-detect
+ROLE=arn:aws:iam::686890423796:role/ecoguard-rekognition-detect
 SA=fn-tagging@ecoguard-g21.iam.gserviceaccount.com
 
 gcloud functions deploy tagging \
