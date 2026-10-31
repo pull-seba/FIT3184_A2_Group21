@@ -12,7 +12,7 @@ Then it makes the file's derived objects in the derived bucket (never the media 
 | Image | `thumbs/<sha256>.jpg`: longest side 320 px, aspect ratio kept, `INTER_AREA`, JPEG quality 80 | `thumbnail_key`, `thumbnail_uri`, `pipeline.thumbnail` |
 | Video | `frames/<sha256>/0000.jpg`, `0001.jpg`…: one frame per 10 s, found by seeking (`CAP_PROP_POS_MSEC`), not by decoding every frame; a clip under 10 s gives one. Plus a poster thumbnail from the first frame | `thumbnail_key`, `thumbnail_uri`, `frame_keys`, `duration_s`, `pipeline.thumbnail`, `pipeline.frames` |
 
-For a video it then publishes `frames-ready` (`docs/contracts/events.md`, Proposed) so member 3's tagging can tag the frames. A file OpenCV can't decode gets `"failed"` for those steps and no derived objects.
+For a video it then publishes `frames-ready` (`docs/contracts/events.md`) so member 3's tagging can tag the frames. A file OpenCV can't decode gets `"failed"` for those steps and no derived objects.
 
 An object that isn't a valid upload is deleted and gets no record:
 
