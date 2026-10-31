@@ -7,12 +7,10 @@ checks this file gives the same tags as the bake-off on all 140 test photos.
 """
 
 import io
-import json
-import time
-from pathlib import Path
 
 from PIL import Image, ImageOps
 
+from ecoguard_common.tag_match import load_tags
 from ecoguard_ml import BadImage, rekognition
 
 # Rekognition reads only JPEG or PNG up to 5 MB, and uploads can be WebP or up
@@ -21,27 +19,16 @@ from ecoguard_ml import BadImage, rekognition
 REKOGNITION_FORMATS = {"JPEG", "PNG"}
 MAX_BYTES = 5 * 1024 * 1024
 MAX_SIDE = 2048
-CONFIG_TTL_S = 300  # re-read config/model every 5 minutes
 
 # config/model's "detector" names one of these. A new model is a new entry
 # here plus a config change; thresholds alone need no code change.
 DETECTORS = {"rekognition": rekognition.detect_labels}
 
 
-def _load_label_map() -> dict[str, str]:
-    """model_label_map from shared/tags.json, keys lowercased: labels are
-    matched case-insensitively (decision of 28 Oct)."""
-    here = Path(__file__).parent
-    path = here / "tags.json"  # the copy made at deploy
-    if not path.exists():
-        # In the repo. Only looked up here: deployed, the package sits at
-        # /workspace/ecoguard_ml, which has no folder two levels up.
-        path = here.parents[2] / "shared" / "tags.json"
-    label_map = json.loads(path.read_text())["model_label_map"]
-    return {label.lower(): tag for label, tag in label_map.items()}
-
-
-LABEL_MAP = _load_label_map()
+# Labels match case-insensitively (decision of 28 Oct).
+LABEL_MAP = {
+    label.lower(): tag for label, tag in load_tags()["model_label_map"].items()
+}
 
 
 def prepare_image(data: bytes) -> bytes:
@@ -78,9 +65,7 @@ def animal_labels(labels: list[dict]) -> list[str]:
     ]
 
 
-def count_tags(
-    labels: list[dict], config: dict, label_map: dict[str, str] = LABEL_MAP
-) -> dict[str, int]:
+def count_tags(labels: list[dict], config: dict) -> dict[str, int]:
     """{tag: count} for one image from its detector labels.
 
     A label counts when it maps to a tag and its confidence reaches that
@@ -96,39 +81,30 @@ def count_tags(
     def boxes(label):
         return sum(1 for c in label["instances"] if c >= box_min)
 
-    tags = {}
     own_boxes = {}
     for label in labels:
-        tag = label_map.get(label["name"].lower())
-        if not tag:
-            continue  # unmapped labels are dropped
-        if label["confidence"] < thresholds.get(
-            tag, config["default_threshold"]
-        ):
-            continue
-        tags[tag] = max(tags.get(tag, 0), boxes(label) or 1)
-        own_boxes[tag] = max(own_boxes.get(tag, 0), boxes(label))
+        tag = LABEL_MAP.get(label["name"].lower())
+        threshold = thresholds.get(tag, config["default_threshold"])
+        if tag and label["confidence"] >= threshold:
+            own_boxes[tag] = max(own_boxes.get(tag, 0), boxes(label))
 
+    spare = 0
     if config["borrow_boxes"]:
         spare = max(
             (
                 boxes(label)
                 for label in labels
                 if "Animal" in label["parents"]
-                and label_map.get(label["name"].lower()) not in tags
+                and LABEL_MAP.get(label["name"].lower()) not in own_boxes
             ),
             default=0,
         )
-        for tag in tags:
-            if not own_boxes[tag] and spare:
-                tags[tag] = spare
-    return tags
+    return {tag: own or spare or 1 for tag, own in own_boxes.items()}
 
 
 def analyse(data: bytes, config: dict) -> tuple[dict[str, int], list[dict]]:
-    """Tags for one image's bytes, plus the detector's labels (with boxes),
-    which lost pet sightings need. Nothing is stored: search_by_file uses
-    this on query photos too."""
+    """Tags for one image's bytes, plus the detector's labels. Nothing is
+    stored: search_by_file uses this on query photos too."""
     detector = DETECTORS.get(config["detector"])
     if detector is None:
         raise ValueError(
@@ -138,27 +114,11 @@ def analyse(data: bytes, config: dict) -> tuple[dict[str, int], list[dict]]:
     return count_tags(labels, config), labels
 
 
-class ModelConfig:
-    """config/model from Firestore, read on first use and again once it is
-    CONFIG_TTL_S old, so a pushed change reaches running functions within
-    five minutes without a redeploy."""
-
-    def __init__(self, db, ttl_s=CONFIG_TTL_S, clock=time.monotonic):
-        self._db = db
-        self._ttl_s = ttl_s
-        self._clock = clock
-        self._config = None
-        self._read_at = 0.0
-
-    def get(self) -> dict:
-        now = self._clock()
-        if self._config is None or now - self._read_at >= self._ttl_s:
-            snapshot = self._db.document("config/model").get()
-            if not snapshot.exists:
-                raise RuntimeError(
-                    "config/model is missing: run "
-                    "functions/ml/config/push_model_config.py"
-                )
-            self._config = snapshot.to_dict()
-            self._read_at = now
-        return self._config
+def model_config(db) -> dict:
+    snapshot = db.document("config/model").get()
+    if not snapshot.exists:
+        raise RuntimeError(
+            "config/model is missing: run "
+            "functions/ml/config/push_model_config.py"
+        )
+    return snapshot.to_dict()

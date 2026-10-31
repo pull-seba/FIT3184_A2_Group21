@@ -25,14 +25,13 @@ from botocore.exceptions import ClientError
 
 from ecoguard_ml import BadImage
 
-# Rekognition errors meaning this image can't be tagged: retrying won't help.
 BAD_IMAGE_ERRORS = {
     "InvalidImageFormatException",
     "ImageTooLargeException",
     "InvalidParameterException",
 }
 ROLE_ARN = os.environ.get("REKOGNITION_ROLE_ARN")
-REFRESH_EARLY_S = 300  # swap credentials five minutes before they expire
+REFRESH_EARLY_S = 300
 
 _clients = {}  # region -> (Rekognition client, credentials expiry)
 
@@ -81,22 +80,11 @@ def client(region: str):
 
 def normalise(label: dict) -> dict:
     """One Rekognition label in the shape the bake-off cached
-    (tools/testset/data/rekognition_raw.jsonl), plus each box's position as
-    [x, y, width, height] fractions, which lost pet crops need."""
-    instances = label.get("Instances", [])
+    (tools/testset/data/rekognition_raw.jsonl)."""
     return {
         "name": label["Name"],
         "confidence": label["Confidence"],
-        "instances": [i["Confidence"] for i in instances],
-        "boxes": [
-            [
-                i["BoundingBox"]["Left"],
-                i["BoundingBox"]["Top"],
-                i["BoundingBox"]["Width"],
-                i["BoundingBox"]["Height"],
-            ]
-            for i in instances
-        ],
+        "instances": [i["Confidence"] for i in label.get("Instances", [])],
         "parents": [p["Name"] for p in label.get("Parents", [])],
     }
 

@@ -13,7 +13,6 @@ logs it and returns 500, so Eventarc retries (deployed with --retry).
 """
 
 import hashlib
-import re
 import urllib.parse
 
 import functions_framework
@@ -21,29 +20,10 @@ from google.api_core import exceptions
 from google.cloud import firestore, storage
 
 from ecoguard_common.logs import log
-from ecoguard_common.uploads import ACCEPTED
+from ecoguard_common.uploads import MEDIA_KEY, rejection_reason
 
 db = firestore.Client()
 gcs = storage.Client()
-
-MEDIA_KEY = re.compile(r"(?P<file_id>[0-9a-f]{64})\.(?P<ext>[a-z0-9]+)")
-
-
-def rejection_reason(data: dict):
-    """Why the event's object isn't a valid upload, or None. Needs no download."""
-    match = MEDIA_KEY.fullmatch(data["name"])
-    if not match:
-        return "bad_key"
-    extension, size_limit = ACCEPTED.get(data.get("contentType"), (None, 0))
-    if extension != match["ext"]:
-        return "bad_type"
-    # upload_init only saw the size the browser claimed; this one is stored.
-    if int(data["size"]) > size_limit:
-        return "too_large"
-    # Every upload_init URL signs this header in.
-    if not (data.get("metadata") or {}).get("uploaded-by"):
-        return "no_uploader"
-    return None
 
 
 def sha256_of(blob) -> str:

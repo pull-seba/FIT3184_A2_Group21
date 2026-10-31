@@ -7,7 +7,7 @@ Gives every upload species tags with counts, written to `files/<sha256>`: `tags`
 
 - **Images:** the bytes go to Amazon Rekognition `DetectLabels` in `us-east-1`. Labels are mapped to our tags through `shared/tags.json` and kept if they pass the tag's threshold. The count is the number of boxes on the tag's own label. If that label has no boxes, the count borrows the boxes on another animal label in the photo, or is 1. That's the rule the bake-off chose (`tools/testset`, decision of 29 Oct), in `../ecoguard_ml/detect.py`.
 - **Videos:** tagged from `frames-ready`. Each tag's count is the highest count in any one frame, never the sum.
-- **Settings:** every threshold, the detector, its region and the counting switches come from Firestore `config/model`, re-read every 5 minutes. Changing a threshold means editing `../config/model.json`, bumping `version` and running `../config/push_model_config.py`. No code change and no redeploy (rubric 2.1.3).
+- **Settings:** every threshold, the detector, its region and the counting switches come from Firestore `config/model`, read on every event. Changing a threshold means editing `../config/model.json`, bumping `version` and running `../config/push_model_config.py`. No code change and no redeploy (rubric 2.1.3).
 - **Manual tags:** the write is a transaction that keeps every tag in `manual_tags` at its existing count. Automatic tags the model no longer finds are removed.
 - **Not stored on AWS:** Rekognition analyses the bytes and keeps nothing.
 - **Original bytes, as in the bake-off:** a JPEG or PNG under 5 MB goes to Rekognition unchanged. Re-encoding can drop the weak labels a count borrows boxes from, so the bake-off's thresholds only hold for original bytes. WebP, and anything over 5 MB, becomes a 2048 px JPEG first (Rekognition reads only JPEG and PNG, up to 5 MB).
@@ -15,7 +15,7 @@ Gives every upload species tags with counts, written to `files/<sha256>`: `tags`
 
 Idempotent: a repeat event for a file already tagged by the current `config/model` version does nothing. An image Rekognition or Pillow can't read gets `pipeline.tagging: "failed"` and isn't retried. Any other error is raised, so the event is retried.
 
-Not yet: lost pet `sightings` (cat and dog crops with Vertex AI embeddings). `detect.analyse` already returns the boxes they need.
+Not yet: lost pet `sightings` (cat and dog crops with Vertex AI embeddings).
 
 ## Triggers
 Two functions deploy from this folder (`docs/contracts/events.md`):
@@ -54,7 +54,7 @@ cd functions/ml && python -m pytest tests      # ecoguard_ml, including all 140 
    ```bash
    infra/gcp/ml.sh
    ```
-2. In `aws/iam/rekognition-detect-trust.json`, replace `FN_TAGGING_UNIQUE_ID`, `FN_SEARCH_BY_FILE_UNIQUE_ID` and `AWS_ACCOUNT_ID`. None of them is a secret, so commit the real values. Then, with an AWS admin profile:
+2. With an AWS admin profile:
    ```bash
    aws iam create-role --role-name ecoguard-rekognition-detect \
      --assume-role-policy-document file://aws/iam/rekognition-detect-trust.json
@@ -68,8 +68,8 @@ Gen2 names allow only lowercase letters, digits and hyphens.
 cd functions/ml/tagging
 cp -r ../../../shared/python/ecoguard_common .   # gitignored copies of the shared packages
 cp -r ../ecoguard_ml .
-cp ../../../shared/tags.json ecoguard_ml/        # the label map detect reads
-ROLE=arn:aws:iam::<aws-account-id>:role/ecoguard-rekognition-detect
+cp ../../../shared/tags.json ecoguard_common/    # the tag list and label map
+ROLE=arn:aws:iam::686890423796:role/ecoguard-rekognition-detect
 SA=fn-tagging@ecoguard-g21.iam.gserviceaccount.com
 
 gcloud functions deploy tagging \

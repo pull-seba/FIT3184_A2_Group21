@@ -1,17 +1,6 @@
 """tagging: species tags with counts for every uploaded image and video.
 
-Owner: member 3. Rubric 2.1.3. Triggers: docs/contracts/events.md.
-
-Two entry points in one folder, deployed as two functions (README.md):
-- on_upload: the media bucket's object-finalized event. Tags images and
-  returns at once for videos, which wait for their frames.
-- on_frames_ready: the frames-ready message process_upload publishes for a
-  video. Tags each frame and keeps each tag's highest count in any one frame.
-
-Both are idempotent (Eventarc and Pub/Sub can deliver twice): a repeat event
-for a file already tagged with the current config/model version does nothing.
-Errors that a retry could fix are raised so the event is delivered again;
-an image Rekognition can't read is marked pipeline.tagging = "failed".
+Owner: member 3. Rubric 2.1.3. Triggers: see README.md.
 """
 
 import base64
@@ -24,33 +13,17 @@ from google.api_core import exceptions
 from google.cloud import firestore, storage
 
 from ecoguard_common.logs import log
-from ecoguard_common.uploads import ACCEPTED
+from ecoguard_common.uploads import MEDIA_KEY, rejection_reason
 from ecoguard_ml import BadImage, detect
 
-db = firestore.Client()  # created once per instance, reused across events
+db = firestore.Client()
 gcs = storage.Client()
-model_config = detect.ModelConfig(db)
 
 FILE_ID = re.compile(r"[0-9a-f]{64}")
-MEDIA_KEY = re.compile(r"(?P<file_id>[0-9a-f]{64})\.(?P<ext>[a-z0-9]+)")
 # The only fields tagging writes (firestore-schema.md). set() with this list
 # replaces exactly these, so an automatic tag the model no longer finds goes
 # away, and works whether or not process_upload has written the record yet.
 TAGGING_FIELDS = ["tags", "model_version", "tagged_at", "pipeline.tagging"]
-
-
-def upload_file_id(data: dict) -> str | None:
-    """The file ID if the object looks like an upload_init upload, else
-    None. process_upload deletes anything else, so tagging skips it."""
-    match = MEDIA_KEY.fullmatch(data["name"])
-    accepted = ACCEPTED.get(data.get("contentType", ""))
-    if not match or not accepted or accepted[0] != match["ext"]:
-        return None
-    if int(data["size"]) > accepted[1]:
-        return None
-    if not (data.get("metadata") or {}).get("uploaded-by"):
-        return None
-    return match["file_id"]
 
 
 def max_per_tag(per_image: list[dict[str, int]]) -> dict[str, int]:
@@ -96,8 +69,7 @@ def write_tags(doc, detected: dict[str, int], version: str):
 
 
 def tag_file(file_id: str, images: list[bytes]):
-    """Tag one file from its image, or from a video's frames."""
-    config = model_config.get()
+    config = detect.model_config(db)
     doc = db.collection("files").document(file_id)
     record = doc.get().to_dict() or {}
     if (
@@ -125,25 +97,23 @@ def tag_file(file_id: str, images: list[bytes]):
         tags=tags,
         images=len(results),
         model_version=config["version"],
-        # Per image or frame: the labels each count came from.
         labels=[detect.animal_labels(labels) for _, labels in results],
     )
 
 
 @functions_framework.cloud_event
 def on_upload(event):
-    data = event.data  # the Cloud Storage object; numbers arrive as strings
-    file_id = upload_file_id(data)
-    if file_id is None:
+    data = event.data
+    # process_upload deletes anything that fails this, so it isn't tagged.
+    if rejection_reason(data):
         log("INFO", "not a valid upload, ignored", key=data["name"])
         return
+    file_id = MEDIA_KEY.fullmatch(data["name"])["file_id"]
     if data["contentType"].startswith("video/"):
         log("INFO", "video: tagged from frames-ready", file_id=file_id)
         return
 
-    blob = gcs.bucket(data["bucket"]).blob(
-        data["name"], generation=int(data["generation"])
-    )
+    blob = gcs.bucket(data["bucket"]).blob(data["name"])
     try:
         content = blob.download_as_bytes()
     except exceptions.NotFound:
@@ -159,7 +129,6 @@ def on_upload(event):
 
 @functions_framework.cloud_event
 def on_frames_ready(event):
-    """Payload: {"file_id", "bucket", "frame_keys", "duration_s"}."""
     message = json.loads(base64.b64decode(event.data["message"]["data"]))
     file_id = message.get("file_id", "")
     frame_keys = message.get("frame_keys") or []
