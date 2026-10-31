@@ -48,8 +48,8 @@ Results lists are `{"results": [FileSummary, ...]}`, newest first unless a route
 | `POST /search/by-file` | 3 | `ml/search_by_file` | 2.2.3 |
 | `POST /search/lost-pet` | 3 | `ml/lost_pet` | 2.2.4 |
 | `POST /tags/bulk` | 4 | `search/bulk_tags` | 2.3.1 |
-| `GET /notifications/subscriptions` | 1 | decided by member 1 | 2.3.3 |
-| `PUT /notifications/subscriptions` | 1 | decided by member 1 | 2.3.3 |
+| `GET /notifications/subscriptions` | 1 | `notify/subscriptions` | 2.3.3 |
+| `PUT /notifications/subscriptions` | 1 | `notify/subscriptions` | 2.3.3 |
 
 ### `POST /uploads/init` (member 2)
 Request:
@@ -71,13 +71,16 @@ Returns a `FileSummary` plus `"pipeline": {"thumbnail": "done", "tagging": "done
 
 ### `POST /files/delete` (member 2)
 ```json
-{ "urls": ["<original, thumbnail or frame URL>", "..."] }
+{ "urls": ["<original or thumbnail URL>", "..."] }
 ```
 Response, one result per URL in the same order:
 ```json
 { "results": [ { "url": "...", "file_id": "<64 hex>", "status": "deleted" }, { "url": "...", "file_id": null, "status": "not_found" } ] }
 ```
 `status` is `deleted`, `not_found` or `error` (with `detail`). Deleting removes the original, thumbnail, frames, sightings and the `files` document.
+- Only the file's uploader can delete it (its `uploaded_by` is the caller's `sub`). Anyone else gets `error` with detail `You can only delete files you uploaded`, and the file is left as it was.
+- A URL that isn't one of our files gets `not_found` with `file_id: null`. A file that has no record, because it was never uploaded or is already deleted, gets `not_found` with its `file_id`.
+- 1 to 100 URLs per request; otherwise `400`.
 
 ### `POST /search/tags` (member 4)
 Body is the tag query from the spec: tag name to minimum count, combined with AND.
@@ -114,7 +117,7 @@ At least `image_base64` or `species` is required. Only public sightings within `
 `operation` 1 adds (count 1 if the tag is absent), 0 removes. Removing a tag a file doesn't have is ignored. Unknown tags give `400 unknown_tag`. Response: one result per URL, as in `/files/delete`, with `status` `updated` or `not_found`.
 
 ### `GET` and `PUT /notifications/subscriptions` (member 1)
-`PUT` body `{"tags": ["fox", "cane toad"]}` replaces the caller's alert tags; `GET` returns them. Member 1 decides where the backend runs and documents it here.
+`PUT` body `{"tags": ["fox", "cane toad"]}` replaces the caller's alert tags; `GET` returns them. Tags are the caller's SNS email subscription to `ecoguard-tag-alerts`, filtered on `tags`; the function reaches AWS without keys (`docs/decisions.md`).
 
 ## Chatbot
 The Lex fulfilment Lambda (member 4) calls `/search/tags`, `/search/species` and `/search/lost-pet` through the gateway like any other client, with a Cognito ID token (see `docs/decisions.md` for how it gets one). It returns each result as a clickable link.

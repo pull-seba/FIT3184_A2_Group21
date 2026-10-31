@@ -1,0 +1,277 @@
+# API Gateway spec for every route in docs/contracts/api-routes.md. Owner: member 1. Rubric 1.2, 1.3.
+# API Gateway only accepts OpenAPI 2.0 (Swagger), not 3.x.
+
+swagger: "2.0"
+info:
+  title: ecoguard-api
+  description: Aussie EcoGuard API. Every route needs a Cognito ID token.
+  version: 1.0.0
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+
+securityDefinitions:
+  cognito:
+    # Swagger 2.0 needs these three fields for an oauth2 scheme; the gateway ignores them.
+    type: oauth2
+    flow: implicit
+    authorizationUrl: ""
+    x-google-issuer: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_1ni2DpRgV
+    x-google-jwks_uri: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_1ni2DpRgV/.well-known/jwks.json
+    # The app client ID. Only ID tokens carry it as "aud"; access tokens are rejected.
+    x-google-audiences: 3gr1ln2m7ohrk1jleavngbepvk
+
+# Applies to every operation below. Each one repeats it too, so no route can be missed.
+security:
+  - cognito: []
+
+paths:
+  /uploads/init:
+    post:
+      operationId: uploadInit
+      summary: Signed upload URL, or the existing file for a duplicate (member 2, 2.1.1)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/upload-init
+      responses:
+        "200":
+          description: "{status: upload | duplicate, ...}"
+    options:
+      operationId: uploadInitCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/upload-init
+      responses:
+        "204":
+          description: CORS headers only
+
+  /files/{file_id}:
+    parameters:
+      - name: file_id
+        in: path
+        required: true
+        type: string
+    get:
+      operationId: getFile
+      summary: One file's summary and processing progress (member 2, 3.1)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/get-file
+      responses:
+        "200":
+          description: FileSummary plus pipeline
+        "404":
+          description: No such file
+    options:
+      operationId: getFileCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/get-file
+      responses:
+        "204":
+          description: CORS headers only
+
+  /files/delete:
+    post:
+      operationId: deleteFiles
+      summary: Delete files and everything derived from them (member 2, 2.3.2)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/delete-files
+      responses:
+        "200":
+          description: One result per URL
+    options:
+      operationId: deleteFilesCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/delete-files
+      responses:
+        "204":
+          description: CORS headers only
+
+  /search/tags:
+    post:
+      operationId: searchTags
+      summary: Files matching every tag's minimum count (member 4, 2.2.1)
+      parameters:
+        - name: from
+          in: query
+          type: string
+        - name: to
+          in: query
+          type: string
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/tag-query
+      responses:
+        "200":
+          description: "{results: [FileSummary]}"
+    options:
+      operationId: searchTagsCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/tag-query
+      responses:
+        "204":
+          description: CORS headers only
+
+  /search/species:
+    get:
+      operationId: searchSpecies
+      summary: Files with at least one of a species (member 4, 2.2.1)
+      parameters:
+        - name: name
+          in: query
+          required: true
+          type: string
+        - name: from
+          in: query
+          type: string
+        - name: to
+          in: query
+          type: string
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/tag-query
+      responses:
+        "200":
+          description: "{results: [FileSummary]}"
+    options:
+      operationId: searchSpeciesCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/tag-query
+      responses:
+        "204":
+          description: CORS headers only
+
+  /search/thumbnail:
+    post:
+      operationId: searchThumbnail
+      summary: Full-size URL for a thumbnail URL (member 4, 2.2.2)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/thumbnail-lookup
+      responses:
+        "200":
+          description: "{file_id, file_type, url}"
+    options:
+      operationId: searchThumbnailCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/thumbnail-lookup
+      responses:
+        "204":
+          description: CORS headers only
+
+  /search/by-file:
+    post:
+      operationId: searchByFile
+      summary: Files with the same tags as an uploaded photo, which is never stored (member 3, 2.2.3)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/search-by-file
+        deadline: 60.0 # running the detector takes longer than the 15 s default
+      responses:
+        "200":
+          description: "{detected_tags, results: [FileSummary]}"
+    options:
+      operationId: searchByFileCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/search-by-file
+      responses:
+        "204":
+          description: CORS headers only
+
+  /search/lost-pet:
+    post:
+      operationId: searchLostPet
+      summary: Public sightings that look like a lost pet (member 3, 2.2.4)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/lost-pet
+        deadline: 60.0 # embedding a photo takes longer than the 15 s default
+      responses:
+        "200":
+          description: "{results: [FileSummary + score]}"
+    options:
+      operationId: searchLostPetCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/lost-pet
+      responses:
+        "204":
+          description: CORS headers only
+
+  /tags/bulk:
+    post:
+      operationId: bulkTags
+      summary: Add (operation 1) or remove (operation 0) tags across files (member 4, 2.3.1)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/bulk-tags
+      responses:
+        "200":
+          description: One result per URL
+    options:
+      operationId: bulkTagsCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/bulk-tags
+      responses:
+        "204":
+          description: CORS headers only
+
+  /notifications/subscriptions:
+    get:
+      operationId: getSubscriptions
+      summary: The caller's alert tags (member 1, 2.3.3)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/subscriptions
+      responses:
+        "200":
+          description: "{tags: [...]}"
+    put:
+      operationId: putSubscriptions
+      summary: Replace the caller's alert tags (member 1, 2.3.3)
+      security:
+        - cognito: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/subscriptions
+      responses:
+        "200":
+          description: "{tags: [...]}"
+    options:
+      operationId: subscriptionsCors
+      summary: CORS preflight; browsers send it without a token, so it has no security
+      security: []
+      x-google-backend:
+        address: https://us-east1-ecoguard-g21.cloudfunctions.net/subscriptions
+      responses:
+        "204":
+          description: CORS headers only
