@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Member 2's GCP resources: the media and derived buckets, CORS so the browser can upload, and one
-# service account per ingestion function holding only the roles that function uses.
+# Member 2's GCP resources: the media and derived buckets, CORS so the browser can upload, the
+# frames-ready topic, and one service account per ingestion function holding only the roles it uses.
 # Run after setup.sh. Buckets and accounts need Editor; the last section also needs Project IAM Admin
 # and Service Account Admin (or Owner). Safe to re-run: each step skips what exists or repeats harmlessly.
 # Usage: infra/gcp/ingestion.sh
@@ -46,6 +46,7 @@ bucket_role() {
 UPLOAD_INIT=$(service_account fn-upload-init "upload_init (member 2)")
 GET_FILE=$(service_account fn-get-file "get_file (member 2)")
 PROCESS_UPLOAD=$(service_account fn-process-upload "process_upload (member 2)")
+DELETE_FILES=$(service_account fn-delete-files "delete_files (member 2)")
 
 # A signed URL acts with its signer's permissions, so upload_init needs whatever its URLs do: PUT new
 # originals, and GET the original and thumbnail when it answers "duplicate" with a FileSummary.
@@ -59,6 +60,12 @@ bucket_role "$DERIVED_BUCKET" "$GET_FILE" roles/storage.objectViewer
 # process_upload reads each new original to hash it and deletes rejected ones. objectUser is the
 # narrowest predefined role that includes delete.
 bucket_role "$MEDIA_BUCKET" "$PROCESS_UPLOAD" roles/storage.objectUser
+# It also writes thumbnails and frames, and a retry overwrites them, which needs delete too.
+bucket_role "$DERIVED_BUCKET" "$PROCESS_UPLOAD" roles/storage.objectUser
+
+# process_upload publishes each video's frames here for member 3's tagging (docs/contracts/events.md).
+gcloud pubsub topics describe frames-ready --project="$PROJECT_ID" >/dev/null 2>&1 ||
+  gcloud pubsub topics create frames-ready --project="$PROJECT_ID" >/dev/null
 
 # ---- Needs Project IAM Admin and Service Account Admin (or Owner) ----
 project_role() {
@@ -75,6 +82,12 @@ gcloud iam service-accounts add-iam-policy-binding "$GET_FILE" --project="$PROJE
   --member="serviceAccount:$GET_FILE" --role=roles/iam.serviceAccountTokenCreator >/dev/null
 gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PROJECT_ID" \
   --member="serviceAccount:$UPLOAD_INIT" --role=roles/iam.serviceAccountTokenCreator >/dev/null
+# Publisher on the one topic it uses, not on the project. A topic's own policy needs Owner or Pub/Sub
+# Admin (Editor and Project IAM Admin can't change it), so without them this warns and carries on.
+FRAMES_GRANT="gcloud pubsub topics add-iam-policy-binding frames-ready --project=$PROJECT_ID \
+--member=serviceAccount:$PROCESS_UPLOAD --role=roles/pubsub.publisher"
+$FRAMES_GRANT >/dev/null 2>&1 ||
+  echo "Couldn't grant process-upload publish on frames-ready: ask a project Owner to run: $FRAMES_GRANT" >&2
 
 # The upload trigger: Cloud Storage publishes each event to Pub/Sub through its service agent (one grant
 # covers every storage trigger in the project, member 3's too), and Eventarc delivers it to the function
@@ -82,9 +95,10 @@ gcloud iam service-accounts add-iam-policy-binding "$UPLOAD_INIT" --project="$PR
 # project IAM took over an hour to accept it (27 Oct), so this grant warns instead of stopping the script.
 # IAM can still reject it after the grant exists, so it's skipped once the grant is there.
 STORAGE_AGENT=$(gcloud storage service-agent --project="$PROJECT_ID")
+# The member is matched with grep: gcloud's --filter no longer matches values with a colon in them.
 has_project_role() {
   gcloud projects get-iam-policy "$PROJECT_ID" --flatten="bindings[].members" \
-    --filter="bindings.role=$2 AND bindings.members=$1" --format="value(bindings.role)" | grep -q .
+    --filter="bindings.role=$2" --format="value(bindings.members)" | grep -qxF "$1"
 }
 has_project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher ||
   project_role "serviceAccount:$STORAGE_AGENT" roles/pubsub.publisher 2>/dev/null ||
@@ -102,6 +116,15 @@ fi
 # The gateway calls each HTTP function as its own account (infra/gateway/README.md), and only it may.
 GATEWAY="ecoguard-gateway@$PROJECT_ID.iam.gserviceaccount.com"
 for function in upload-init get-file; do
+# delete_files lists and deletes each file's objects in both buckets, and deletes its record and
+# sightings. objectUser is the narrowest predefined role that includes delete.
+bucket_role "$MEDIA_BUCKET" "$DELETE_FILES" roles/storage.objectUser
+bucket_role "$DERIVED_BUCKET" "$DELETE_FILES" roles/storage.objectUser
+project_role "serviceAccount:$DELETE_FILES" roles/datastore.user
+
+# The gateway calls each HTTP function as its own account (infra/gateway/README.md), and only it may.
+GATEWAY="ecoguard-gateway@$PROJECT_ID.iam.gserviceaccount.com"
+for function in upload-init delete-files; do
   if gcloud run services describe "$function" --project="$PROJECT_ID" --region="$REGION" >/dev/null 2>&1; then
     gcloud run services add-iam-policy-binding "$function" --project="$PROJECT_ID" --region="$REGION" \
       --member="serviceAccount:$GATEWAY" --role=roles/run.invoker >/dev/null
@@ -110,4 +133,4 @@ for function in upload-init get-file; do
   fi
 done
 
-echo "Ingestion resources ready: gs://$MEDIA_BUCKET, gs://$DERIVED_BUCKET, $UPLOAD_INIT, $PROCESS_UPLOAD, $GET_FILE"
+echo "Ingestion resources ready: gs://$MEDIA_BUCKET, gs://$DERIVED_BUCKET, $UPLOAD_INIT, $PROCESS_UPLOAD, $GET_FILE, $DELETE_FILES"
