@@ -25,14 +25,13 @@ from botocore.exceptions import ClientError
 
 from ecoguard_ml import BadImage
 
-# Rekognition errors meaning this image can't be tagged: retrying won't help.
 BAD_IMAGE_ERRORS = {
     "InvalidImageFormatException",
     "ImageTooLargeException",
     "InvalidParameterException",
 }
 ROLE_ARN = os.environ.get("REKOGNITION_ROLE_ARN")
-REFRESH_EARLY_S = 300  # swap credentials five minutes before they expire
+REFRESH_EARLY_S = 300
 
 _clients = {}  # region -> (Rekognition client, credentials expiry)
 

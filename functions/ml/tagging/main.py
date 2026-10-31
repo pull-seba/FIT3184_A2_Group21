@@ -16,7 +16,7 @@ from ecoguard_common.logs import log
 from ecoguard_common.uploads import MEDIA_KEY, rejection_reason
 from ecoguard_ml import BadImage, detect
 
-db = firestore.Client()  # created once per instance, reused across events
+db = firestore.Client()
 gcs = storage.Client()
 
 FILE_ID = re.compile(r"[0-9a-f]{64}")
@@ -69,7 +69,6 @@ def write_tags(doc, detected: dict[str, int], version: str):
 
 
 def tag_file(file_id: str, images: list[bytes]):
-    """Tag one file from its image, or from a video's frames."""
     config = detect.model_config(db)
     doc = db.collection("files").document(file_id)
     record = doc.get().to_dict() or {}
@@ -98,7 +97,6 @@ def tag_file(file_id: str, images: list[bytes]):
         tags=tags,
         images=len(results),
         model_version=config["version"],
-        # Per image or frame: the labels each count came from.
         labels=[detect.animal_labels(labels) for _, labels in results],
     )
 
@@ -131,7 +129,6 @@ def on_upload(event):
 
 @functions_framework.cloud_event
 def on_frames_ready(event):
-    """Payload: {"file_id", "bucket", "frame_keys", "duration_s"}."""
     message = json.loads(base64.b64decode(event.data["message"]["data"]))
     file_id = message.get("file_id", "")
     frame_keys = message.get("frame_keys") or []
