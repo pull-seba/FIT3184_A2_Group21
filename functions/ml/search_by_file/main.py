@@ -28,7 +28,6 @@ from ecoguard_ml import BadImage, detect
 db = firestore.Client()  # created once per instance, reused across requests
 gcs = storage.Client()
 credentials, _ = google.auth.default()
-model_config = detect.ModelConfig(db)
 
 DERIVED_BUCKET = "ecoguard-g21-derived"
 DOWNLOAD_URL_MINUTES = 60
@@ -163,7 +162,7 @@ def handler(request):
         )
 
     try:
-        detected, _ = detect.analyse(data, model_config.get())
+        detected, _ = detect.analyse(data, detect.model_config(db))
         query = species_query(detected)
         # No species, nothing to match: Firestore isn't queried.
         matching = search(query) if query else []

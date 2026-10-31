@@ -20,6 +20,9 @@ with (
 ):
     import main
 
+# The real config reader, kept before the config fixture replaces it.
+REAL_MODEL_CONFIG = detect.model_config
+
 app = flask.Flask(__name__)
 
 PHOTO = b"pretend these are the bytes of a fox photo"
@@ -98,7 +101,7 @@ def gcs(clouds):
 
 @pytest.fixture(autouse=True)
 def config(monkeypatch):
-    monkeypatch.setattr(main, "model_config", mock.Mock(get=lambda: CONFIG))
+    monkeypatch.setattr(main.detect, "model_config", lambda db: CONFIG)
 
 
 @pytest.fixture(autouse=True)
@@ -291,7 +294,7 @@ def test_a_full_search_makes_no_write_to_firestore_or_storage(
     db.document.return_value.get.return_value = mock.Mock(
         exists=True, to_dict=lambda: CONFIG
     )
-    monkeypatch.setattr(main, "model_config", detect.ModelConfig(db))
+    monkeypatch.setattr(main.detect, "model_config", REAL_MODEL_CONFIG)
     firestore_returns(db, match=record({"fox": 1}))
 
     body, status, _ = call(search_body())

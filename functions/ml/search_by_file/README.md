@@ -60,7 +60,7 @@ cd functions/ml/search_by_file
 rm -rf ecoguard_common ecoguard_ml
 cp -r ../../../shared/python/ecoguard_common ./   # gitignored copies of the shared packages
 cp -r ../ecoguard_ml ./
-cp ../../../shared/tags.json ecoguard_ml/         # the label map detect reads
+cp ../../../shared/tags.json ecoguard_common/    # the tag list and label map (tag_match.load_tags)
 gcloud functions deploy search-by-file \
   --gen2 --runtime=python312 --region=us-east1 --memory=512Mi \
   --source=. --entry-point=handler --trigger-http \
