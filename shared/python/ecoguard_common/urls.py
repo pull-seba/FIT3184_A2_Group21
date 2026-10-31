@@ -4,7 +4,7 @@ lookup, bulk tagging and delete all use it, so they accept the same URLs.
 Owner: member 2."""
 
 import re
-from urllib.parse import unquote, urlsplit
+from urllib.parse import urlsplit
 
 from ecoguard_common.uploads import ACCEPTED
 
@@ -25,11 +25,10 @@ def file_id_from_url(url: str) -> str:
     """Raises ValueError for any URL that isn't ours. The message never repeats
     the URL: callers may log it, and a signed URL must not reach the logs."""
     parts = urlsplit(url.strip())
-    path = unquote(parts.path)
     if parts.scheme == "gs":
-        bucket, key = parts.netloc, path.removeprefix("/")
+        bucket, key = parts.netloc, parts.path.removeprefix("/")
     elif parts.scheme == "https" and parts.netloc == "storage.googleapis.com":
-        bucket, _, key = path.removeprefix("/").partition("/")
+        bucket, _, key = parts.path.removeprefix("/").partition("/")
     else:
         raise ValueError("not a Cloud Storage URL")
 

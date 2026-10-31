@@ -44,14 +44,6 @@ def test_signed_urls():
     assert file_id_from_url(thumbnail + SIGNATURE) == FILE_ID
 
 
-def test_url_encoded_keys():
-    encoded = [
-        f"https://storage.googleapis.com/{DERIVED}/thumbs%2F{FILE_ID}.jpg",
-    ]
-    for url in encoded:
-        assert file_id_from_url(url) == FILE_ID
-
-
 def test_surrounding_spaces_and_fragments_are_ignored():
     url = f"  gs://{MEDIA}/{FILE_ID}.jpg#top \n"
     assert file_id_from_url(url) == FILE_ID

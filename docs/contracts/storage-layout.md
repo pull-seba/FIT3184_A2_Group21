@@ -45,6 +45,6 @@ The media bucket allows `PUT` from the app's hosting origin and `http://localhos
 `ecoguard_common.urls.file_id_from_url` (owner: member 2) is the only way any function turns a URL into a file ID. It accepts:
 - `https://storage.googleapis.com/<bucket>/<key>`, the form our signed URLs take
 - `gs://<bucket>/<key>`
-- Signed or unsigned, URL-encoded or not
+- Signed or unsigned
 
-It drops the query string, URL-decodes the key, rejects buckets that aren't ours, and returns the 64-character file ID from the key: `<file_id>.<ext>` in the media bucket or `thumbs/<file_id>.jpg` in the derived bucket. Any other URL raises `ValueError`, whose message never repeats the URL, so a signed URL can't reach the logs. It works for originals and thumbnails alike, so the thumbnail lookup (2.2.2), bulk tagging (2.3.1) and delete (2.3.2) all resolve URLs the same way.
+It drops the query string, rejects buckets that aren't ours, and returns the 64-character file ID from the key: `<file_id>.<ext>` in the media bucket or `thumbs/<file_id>.jpg` in the derived bucket. Any other URL raises `ValueError`, whose message never repeats the URL, so a signed URL can't reach the logs. It works for originals and thumbnails alike, so the thumbnail lookup (2.2.2), bulk tagging (2.3.1) and delete (2.3.2) all resolve URLs the same way.
