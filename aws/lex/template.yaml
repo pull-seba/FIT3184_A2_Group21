@@ -261,6 +261,7 @@ Resources:
                             Sorry, I didn't catch that. Try "Show me photos of foxes from last week" or "Help me
                             find a lost ginger cat".
       # The widget talks to the test alias, which always serves the latest build of the draft bot.
+      # No ConversationLogSettings: the logs would record the idToken request attribute (docs/decisions.md).
       TestBotAliasSettings:
         BotAliasLocaleSettings:
           - LocaleId: en_AU
