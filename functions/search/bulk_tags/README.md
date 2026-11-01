@@ -23,6 +23,8 @@ python -m pytest
 ```
 
 ## Deploy (a person runs this)
+`infra/gcp/search.sh` creates the service accounts and roles, deploys all three search functions and lets the gateway call them. To redeploy only this one:
+
 Cloud Functions gen2 names allow only lowercase letters, digits and hyphens, so the function is `bulk-tags`.
 ```bash
 cp -r ../../../shared/python/ecoguard_common .   # gitignored copy of the shared package
