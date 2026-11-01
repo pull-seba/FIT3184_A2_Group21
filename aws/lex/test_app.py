@@ -220,3 +220,4 @@ def test_slot_values_are_the_tag_list():
     tags = json.loads((HERE / "../../shared/tags.json").read_text())
     assert values["Species"] == [tag["name"] for tag in tags["tags"]]
     assert values["PetSpecies"] == tags["lost_pet_species"]
+    assert values["Colour"] == tags["lost_pet_colours"]
