@@ -50,7 +50,6 @@ input[type='number']::-webkit-inner-spin-button {
 
 .stepper {
   display: grid;
-  grid-template-rows: 1fr 1fr;
   width: 32px;
   height: 56px;
   overflow: hidden;
@@ -69,18 +68,6 @@ input[type='number']::-webkit-inner-spin-button {
 
 .stepper button:hover {
   background: var(--mat-sys-surface-container-high);
-}
-
-.stepper mat-icon {
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
-}
-
-.species {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .lookup {

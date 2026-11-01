@@ -9,6 +9,7 @@ import { TagsAction } from '../../components/gallery/actions/tags/tags';
 import { FileSummary } from '../../components/gallery/file-summary';
 import { Gallery } from '../../components/gallery/gallery';
 import { TAG_NAMES } from '../../components/gallery/tags';
+import { problem } from '../query-by-file/read-file';
 
 // POST /search/thumbnail (docs/contracts/api-routes.md).
 interface FullSize {
@@ -33,49 +34,26 @@ export class Search {
   private readonly api = inject(ApiService);
   readonly tagNames = TAG_NAMES;
   readonly results = signal<FileSummary[]>([]);
-  // Set when results arrive, so the heading always names the search they came from.
-  readonly resultsFor = signal('');
+  readonly searched = signal(false);
   readonly fullSize = signal<FullSize | null>(null);
   readonly searching = signal(false);
   readonly lookingUp = signal(false);
   readonly error = signal('');
 
-  // An empty field leaves the tag out of the query, so going down from the minimum clears it.
-  stepDown(count: HTMLInputElement): void {
-    if (Number(count.value) <= 1) count.value = '';
-    else count.stepDown();
-  }
-
-  searchTags(form: HTMLFormElement): void {
+  async searchTags(form: HTMLFormElement): Promise<void> {
     const query: Record<string, number> = {};
+    // A blank or 0 count leaves the tag out of the query.
     new FormData(form).forEach((count, tag) => {
-      if (count) query[tag] = Number(count);
+      if (Number(count)) query[tag] = Number(count);
     });
-    if (Object.keys(query).length === 0) {
-      this.error.set('Enter a minimum count for at least one tag.');
-      return;
-    }
-    const asked = Object.entries(query)
-      .map(([tag, count]) => `${tag} ≥ ${count}`)
-      .join(' and ');
-    void this.showResults(asked, this.api.post('/search/tags', query));
-  }
-
-  searchSpecies(name: string): void {
-    void this.showResults(`any ${name}`, this.api.get('/search/species', { name }));
-  }
-
-  private async showResults(
-    asked: string,
-    request: Promise<{ results: FileSummary[] }>,
-  ): Promise<void> {
     this.searching.set(true);
     this.error.set('');
     try {
-      this.results.set((await request).results);
-      this.resultsFor.set(asked);
+      const { results } = await this.api.post<{ results: FileSummary[] }>('/search/tags', query);
+      this.results.set(results);
+      this.searched.set(true);
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : String(err));
+      this.error.set(problem(err));
     } finally {
       this.searching.set(false);
     }
@@ -90,7 +68,7 @@ export class Search {
         await this.api.post<FullSize>('/search/thumbnail', { thumbnail_url: thumbnailUrl }),
       );
     } catch (err) {
-      this.error.set(err instanceof Error ? err.message : String(err));
+      this.error.set(problem(err));
     } finally {
       this.lookingUp.set(false);
     }

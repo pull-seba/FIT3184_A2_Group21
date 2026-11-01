@@ -9,7 +9,7 @@
       @for (tag of tagNames; track tag) {
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
           <mat-label>{{ tag }}</mat-label>
-          <input matInput #count type="number" min="1" step="1" [name]="tag" />
+          <input matInput #count type="number" min="0" step="1" [name]="tag" />
           <!-- Not tab stops: the field's arrow keys do the same, like the browser's own arrows. -->
           <div matSuffix class="stepper">
             <button
@@ -24,7 +24,7 @@
               type="button"
               tabindex="-1"
               [attr.aria-label]="'Lower ' + tag + ' count'"
-              (click)="stepDown(count)"
+              (click)="count.stepDown()"
             >
               <mat-icon>keyboard_arrow_down</mat-icon>
             </button>
@@ -34,22 +34,6 @@
     </div>
     <button mat-flat-button type="submit" [disabled]="searching()">Search</button>
   </form>
-
-  <section class="panel">
-    <h2>By species</h2>
-    <div class="species">
-      @for (tag of tagNames; track tag) {
-        <button
-          mat-stroked-button
-          type="button"
-          [disabled]="searching()"
-          (click)="searchSpecies(tag)"
-        >
-          {{ tag }}
-        </button>
-      }
-    </div>
-  </section>
 
   <form class="panel" (submit)="$event.preventDefault(); findFullSize(thumbnailUrl.value)">
     <h2>By thumbnail URL</h2>
@@ -74,13 +58,11 @@
     <p class="error" role="alert">{{ error() }}</p>
   }
 
-  <h2>Results{{ resultsFor() ? ': ' + resultsFor() : '' }}</h2>
+  <h2>Results</h2>
   <app-gallery
     [(files)]="results"
     [loading]="searching()"
-    [emptyMessage]="
-      resultsFor() ? 'No files match this search.' : 'Search above to see files here.'
-    "
+    [emptyMessage]="searched() ? 'No files match this search.' : 'Search above to see files here.'"
   >
     <app-tags-action />
   </app-gallery>
