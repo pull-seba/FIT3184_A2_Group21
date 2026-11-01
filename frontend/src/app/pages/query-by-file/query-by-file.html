@@ -1,0 +1,47 @@
+<main class="query-by-file">
+  <h1>Search by file</h1>
+  <p class="hint">
+    Choose a photo (JPEG, PNG or WebP, up to 20 MB). We find the species in it, then show stored
+    files with at least as many of each. Your photo is only used for this search and is never
+    stored.
+  </p>
+
+  <div class="controls">
+    <label class="choose">
+      <mat-icon aria-hidden="true">image_search</mat-icon>
+      {{ file() ? 'Choose another photo' : 'Choose a photo' }}
+      <input type="file" [accept]="accepted" (change)="choose($event)" />
+    </label>
+    <button mat-flat-button type="button" [disabled]="!file() || loading()" (click)="search()">
+      {{ loading() ? 'Searching…' : 'Search' }}
+    </button>
+  </div>
+
+  @if (preview(); as preview) {
+    <img class="preview" [src]="preview" [alt]="'Photo to search with: ' + file()?.name" />
+  }
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <h2>Results</h2>
+  @if (detected()) {
+    <p class="detected" aria-live="polite">
+      @if (detectedText()) {
+        Detected: {{ detectedText() }}
+      } @else {
+        No target species were detected in this photo.
+      }
+    </p>
+  }
+  <app-gallery
+    [(files)]="results"
+    [loading]="loading()"
+    [emptyMessage]="
+      detected()
+        ? 'No stored files show these species.'
+        : 'Choose a photo and search to see matches.'
+    "
+  />
+</main>
