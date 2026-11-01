@@ -43,6 +43,7 @@ invoker() {
 
 TAGGING=$(service_account fn-tagging "tagging (member 3)")
 SEARCH_BY_FILE=$(service_account fn-search-by-file "search_by_file (member 3)")
+LOST_PET=$(service_account fn-lost-pet "lost_pet (member 3)")
 GATEWAY="ecoguard-gateway@$PROJECT_ID.iam.gserviceaccount.com" # member 1's, see infra/gateway
 
 # tagging reads each new image and each video's frames. Read only: it never writes to storage.
@@ -69,6 +70,18 @@ retry gcloud iam service-accounts add-iam-policy-binding "$SEARCH_BY_FILE" --pro
   --member="serviceAccount:$SEARCH_BY_FILE" --role=roles/iam.serviceAccountTokenCreator >/dev/null
 # Only the gateway calls search-by-file (POST /search/by-file).
 invoker search-by-file "$GATEWAY"
+
+# lost_pet reads sightings, files/<id> and config/model. Read only: the query photo is never stored.
+project_role "$LOST_PET" roles/datastore.viewer
+# Embeds the query photo with Vertex AI, the model that embedded every sighting.
+project_role "$LOST_PET" roles/aiplatform.user
+# Signed URLs for originals and thumbnails, as for search_by_file.
+bucket_role "$MEDIA_BUCKET" "$LOST_PET" roles/storage.objectViewer
+bucket_role "$DERIVED_BUCKET" "$LOST_PET" roles/storage.objectViewer
+retry gcloud iam service-accounts add-iam-policy-binding "$LOST_PET" --project="$PROJECT_ID" \
+  --member="serviceAccount:$LOST_PET" --role=roles/iam.serviceAccountTokenCreator >/dev/null
+# Only the gateway calls lost-pet (POST /search/lost-pet). No AWS role: it never calls Rekognition.
+invoker lost-pet "$GATEWAY"
 
 # The AWS role trusts these IDs (aws/iam/rekognition-detect-trust.json, cross-cloud link 4).
 echo "Unique IDs for the AWS trust policy:"
