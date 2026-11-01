@@ -40,6 +40,12 @@ export class Search {
   readonly lookingUp = signal(false);
   readonly error = signal('');
 
+  // An empty field leaves the tag out of the query, so going down from the minimum clears it.
+  stepDown(count: HTMLInputElement): void {
+    if (Number(count.value) <= 1) count.value = '';
+    else count.stepDown();
+  }
+
   searchTags(form: HTMLFormElement): void {
     const query: Record<string, number> = {};
     new FormData(form).forEach((count, tag) => {
