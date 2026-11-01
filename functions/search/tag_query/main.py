@@ -32,7 +32,17 @@ DOWNLOAD_URL_MINUTES = 60
 KNOWN_TAGS = known_tags()
 MELBOURNE = ZoneInfo("Australia/Melbourne")
 
-JSON_HEADERS = {"Content-Type": "application/json"}
+# The browser calls from the app's origin, so it sends a preflight first
+# (infra/gateway/README.md). "*" is safe: every real call still needs a token.
+CORS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+}
+JSON_HEADERS = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+}
 
 
 def respond(body: dict, status: int = 200):
@@ -133,6 +143,9 @@ def file_summary(file_id: str, record: dict) -> dict:
 
 @functions_framework.http
 def handler(request: flask.Request):
+    if request.method == "OPTIONS":
+        return "", 204, CORS
+
     if get_user(request) is None:
         return error(
             401,
