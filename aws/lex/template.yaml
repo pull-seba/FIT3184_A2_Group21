@@ -116,23 +116,20 @@ Resources:
                   Synonyms: [{ Value: kitten }, { Value: kitty }]
                 - SampleValue: { Value: dog }
                   Synonyms: [{ Value: puppy }, { Value: pup }]
-            # Any colour passes through as typed; the samples only teach Lex what a colour looks like.
+            # Values are lost_pet_colours in shared/tags.json: /search/lost-pet rejects any other colour.
             - Name: Colour
               ValueSelectionSetting:
-                ResolutionStrategy: ORIGINAL_VALUE
+                ResolutionStrategy: TOP_RESOLUTION
               SlotTypeValues:
                 - SampleValue: { Value: ginger }
-                - SampleValue: { Value: orange }
+                  Synonyms: [{ Value: orange }]
                 - SampleValue: { Value: black }
                 - SampleValue: { Value: white }
-                - SampleValue: { Value: black and white }
                 - SampleValue: { Value: grey }
-                - SampleValue: { Value: brown }
+                  Synonyms: [{ Value: gray }]
                 - SampleValue: { Value: tabby }
-                - SampleValue: { Value: tortoiseshell }
-                - SampleValue: { Value: calico }
+                - SampleValue: { Value: brown }
                 - SampleValue: { Value: cream }
-                - SampleValue: { Value: golden }
           Intents:
             - Name: FindPhotos
               Description: Photos and videos of one species, with an optional minimum count and date
