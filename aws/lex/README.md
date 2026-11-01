@@ -18,7 +18,7 @@ Slot type `Species` holds the tag names from `shared/tags.json` and `PetSpecies`
 chat widget ──(identity pool credentials)──▶ Lex RecognizeText, requestAttributes.idToken = Cognito ID token
 Lex ──▶ this Lambda ──(Authorization: Bearer <ID token>)──▶ GCP API Gateway ──▶ tag_query or lost_pet
 ```
-The Lambda has no GCP credentials. It forwards the signed-in user's own ID token, and the gateway checks it as it checks every request; no token, or an expired one, gets "please sign in again". Request attributes travel with one request only, so Lex never keeps the token in its session. This is the session-attribute option of the open Lex token question in `docs/decisions.md`, with request attributes instead.
+The Lambda has no GCP credentials. It forwards the signed-in user's own ID token, and the gateway checks it as it checks every request; no token, or an expired one, gets "please sign in again". Request attributes travel with one request only, so Lex never keeps the token in its session. Decided 1 Nov in `docs/decisions.md`: conversation logs stay off and the Lambda never logs the event, because either would record the token.
 
 ## Replies
 The first message is a sentence (`PlainText`). Each result follows as its own `CustomPayload` message, `{"label": "Photo · fox ×2 · Sat 31 Oct", "url": "<signed URL>"}`, because Lex caps a message at 1024 characters and a signed URL takes about 880. At most 10 links, newest first; the chat widget shows each as a link.
