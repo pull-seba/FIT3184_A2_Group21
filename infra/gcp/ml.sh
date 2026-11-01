@@ -48,8 +48,10 @@ GATEWAY="ecoguard-gateway@$PROJECT_ID.iam.gserviceaccount.com" # member 1's, see
 # tagging reads each new image and each video's frames. Read only: it never writes to storage.
 bucket_role "$MEDIA_BUCKET" "$TAGGING" roles/storage.objectViewer
 bucket_role "$DERIVED_BUCKET" "$TAGGING" roles/storage.objectViewer
-# Reads config/model and files/<id>, writes its tag fields. Firestore roles exist only on the project.
+# Reads config/model and files/<id>, writes its tag fields and sightings. Firestore roles exist only on the project.
 project_role "$TAGGING" roles/datastore.user
+# Embeds each cat or dog crop, and the colour words, with Vertex AI (lost pet sightings).
+project_role "$TAGGING" roles/aiplatform.user
 # Receives the media bucket's events as the trigger's service account.
 project_role "$TAGGING" roles/eventarc.eventReceiver
 
