@@ -11,7 +11,7 @@ Owner: member 4 · Rubric: 2.2.5 · Cross-cloud link 2
 | `FindLostPet` | "Help me find a lost ginger cat" | `POST /search/lost-pet` with `species`, `colour` and `since_days: 30` |
 | `Help`, `FallbackIntent` | "Hi", or anything else | Nothing; Lex answers with example questions |
 
-Slot type `Species` holds the tag names from `shared/tags.json` and `PetSpecies` its `lost_pet_species`, with synonyms such as "foxes" and "boar"; `test_app.py` fails if they drift apart. Dates come from `AMAZON.Date`, but Lex resolves "yesterday" in us-east-1's time zone, up to a day behind Melbourne, so the Lambda works out today, yesterday, this week and last week from Melbourne's date itself.
+Slot type `Species` holds the tag names from `shared/tags.json`, `PetSpecies` its `lost_pet_species` and `Colour` its `lost_pet_colours`, with synonyms such as "foxes" and "boar"; `test_app.py` fails if they drift apart. Dates come from `AMAZON.Date`, but Lex resolves "yesterday" in us-east-1's time zone, up to a day behind Melbourne, so the Lambda works out today, yesterday, this week and last week from Melbourne's date itself.
 
 ## How the Lambda reaches GCP
 ```

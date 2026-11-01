@@ -149,7 +149,7 @@ def test_a_link_fits_in_one_lex_message():
 
 
 def test_lost_pet_search_sends_species_and_colour():
-    slots = {"pet": ("cat", "cat"), "colour": ("Ginger", "Ginger")}
+    slots = {"pet": ("cat", "cat"), "colour": ("orange", "ginger")}
     response, search = run(
         lex_event("FindLostPet", slots), [result(tags={"cat": 1})]
     )

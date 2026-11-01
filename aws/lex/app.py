@@ -189,7 +189,7 @@ def find_photos(intent: dict, token: str) -> list[dict]:
 def find_lost_pet(intent: dict, token: str) -> list[dict]:
     pet = slot_value(intent, "pet")["interpretedValue"]
     colour = slot_value(intent, "colour")
-    colour = colour["interpretedValue"].lower() if colour else None
+    colour = colour["interpretedValue"] if colour else None
     described = f"{colour} {pet}" if colour else pet
 
     results = search(
