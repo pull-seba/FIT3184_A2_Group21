@@ -1,0 +1,70 @@
+.query-by-file {
+  max-width: 960px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+  color: var(--mat-sys-primary);
+}
+
+h2 {
+  margin-top: 32px;
+  font-size: 1.15rem;
+}
+
+.hint {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.choose {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.choose:focus-within {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+/* The real input covers the button invisibly, so it stays reachable by keyboard and screen reader. */
+.choose input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* max-width keeps a wide photo inside a phone screen. */
+.preview {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+}
+
+.error {
+  color: var(--mat-sys-error);
+}
+
+.detected {
+  font-weight: 500;
+}
