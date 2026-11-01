@@ -5,10 +5,8 @@ import { ForgotPassword } from './pages/auth/forgot-password/forgot-password';
 import { SignIn } from './pages/auth/sign-in/sign-in';
 import { SignUp } from './pages/auth/sign-up/sign-up';
 import { Home } from './pages/home/home';
-import { Placeholder } from './placeholder';
 
-// The pages in the shell's navigation. Paths are the page folders under pages/; when a page is
-// ready, its owner swaps Placeholder for their component here.
+// The pages in the shell's navigation. Paths are the page folders under pages/.
 export const pages: Routes = [
   // Loaded on first visit, so the gallery's Material components stay out of the initial bundle.
   {
