@@ -11,3 +11,5 @@ const GROUP_BY_TAGS_JSON_GROUP: Record<string, TagGroup> = {
 export const TAG_GROUP = new Map<string, TagGroup>(
   tagList.tags.map((tag) => [tag.name, GROUP_BY_TAGS_JSON_GROUP[tag.group]]),
 );
+
+export const TAG_NAMES = tagList.tags.map((tag) => tag.name);
