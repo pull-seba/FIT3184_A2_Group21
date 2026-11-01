@@ -29,7 +29,17 @@ SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 UPLOAD_URL_MINUTES = 15
 DOWNLOAD_URL_MINUTES = 60
 
-JSON_HEADERS = {"Content-Type": "application/json"}
+# The browser calls from the app's origin, so it sends a preflight first
+# (infra/gateway/README.md). "*" is safe: every real call still needs a token.
+CORS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+}
+JSON_HEADERS = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+}
 
 
 def respond(body: dict, status: int = 200):
@@ -187,6 +197,9 @@ def upload_response(file_id: str, body: dict, uploader_sub: str) -> dict:
 
 @functions_framework.http
 def handler(request):
+    if request.method == "OPTIONS":
+        return "", 204, CORS
+
     user = get_user(request)
     if user is None:
         # Cloud Run only accepts the gateway, so this means a misconfigured deploy.

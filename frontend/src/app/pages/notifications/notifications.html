@@ -1,0 +1,26 @@
+<main class="alerts">
+  <h1>Alerts</h1>
+  <p>Choose the animals you want an email about when a file with that tag is uploaded or updated.</p>
+
+  @if (loading()) {
+    <p>Loading your alerts…</p>
+  } @else if (loaded()) {
+    @if (chosen().length === 0) {
+      <p>You have no alerts selected.</p>
+    }
+    <div class="tags">
+      @for (tag of tags; track tag) {
+        <mat-checkbox [checked]="chosen().includes(tag)" (change)="toggle(tag, $event.checked)">
+          {{ tag }}
+        </mat-checkbox>
+      }
+    </div>
+    <button mat-flat-button [disabled]="saving()" (click)="save()">
+      {{ saving() ? 'Saving…' : 'Save' }}
+    </button>
+  }
+
+  @if (message()) {
+    <p role="status" [class.error]="failed()">{{ message() }}</p>
+  }
+</main>

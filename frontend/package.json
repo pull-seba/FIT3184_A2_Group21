@@ -18,6 +18,8 @@
     "@angular/material": "^21.2.14",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@aws-sdk/client-lex-runtime-v2": "^3.1161.0",
+    "@aws-sdk/credential-provider-cognito-identity": "^3.972.79",
     "amazon-cognito-identity-js": "^6.3.22",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

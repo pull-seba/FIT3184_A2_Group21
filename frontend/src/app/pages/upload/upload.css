@@ -1,0 +1,97 @@
+.upload {
+  max-width: 960px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+  color: var(--mat-sys-primary);
+}
+
+h2 {
+  margin-top: 32px;
+  font-size: 1.15rem;
+}
+
+.hint,
+.text {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.choose {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.choose:focus-within {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+/* The real input covers the button invisibly, so it stays reachable by keyboard and screen reader. */
+.choose input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.rows {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rows li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 10px 14px;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+mat-progress-bar {
+  grid-column: 1 / -1;
+}
+
+.done mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+.duplicate mat-icon {
+  color: var(--eg-either);
+}
+
+.error mat-icon,
+.error .text {
+  color: var(--mat-sys-error);
+}

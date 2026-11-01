@@ -10,11 +10,12 @@ Owner: member 3 · Rubric: 2.2.3
 ```
 Response: `{"detected_tags": {"fox": 2}, "results": [FileSummary, ...]}`, newest first, with fresh 60-minute signed `GET` URLs (`docs/contracts/api-routes.md`).
 
-- **Detection:** the photo is tagged by `../ecoguard_ml/detect.py`, the same code, detector (Rekognition) and `config/model` thresholds that tag uploads, so a photo gets the tags it would get if it were uploaded.
+- **Detection:** the photo is tagged by `../ecoguard_ml/detect.py`, the same code, detector (Rekognition) and `config/model` thresholds that tag uploads.
+- **Resized in the browser first:** the page sends a JPEG of at most 1024 px (`docs/contracts/api-routes.md`), which also strips location metadata. 140 of the 148 test-set photos were already at most 1024 px, so the thresholds were chosen at about this size. Re-encoding can still change a weak label, so a searched photo can get slightly different tags than the original got at upload, mostly in its counts. Matching uses species only, so a changed count doesn't change the results.
 - **Matched by species, not count:** the spec says it "discovers the list of all species (tags) in the uploaded file, then finds all files in the database that contain that set of tags". So every detected species becomes a minimum of 1: a photo of two foxes finds a file with one fox. Two species must both be in a file (AND). The rule itself is member 4's `ecoguard_common.tag_match.matches()`, the one `/search/tags` uses, so only `active` records match. `detected_tags` still reports the counts as detected.
 - **Nothing detected:** `{"detected_tags": {}, "results": []}`, without querying Firestore.
 - **Never stored:** the photo stays in memory. This function makes no Cloud Storage or Firestore write, and logs only the detected tags and the result count, never the image. `test_a_full_search_makes_no_write_to_firestore_or_storage` checks every call a full search makes. Rekognition analyses the bytes and keeps nothing.
-- **Formats:** JPEG, PNG and WebP up to 20 MB (`ecoguard_common.uploads.ACCEPTED`). Videos can't be searched by file.
+- **Formats:** JPEG, PNG and WebP up to 20 MB (`ecoguard_common.uploads.ACCEPTED`), so a client that doesn't resize, such as the curl test below, still works. Videos can't be searched by file.
 - **Shared code to move later:** `search()`, `signed_get_url()` and `file_summary()` are copied from member 4's `search/tag_query`, so `FileSummary` is built the same way on every route. They should move into `ecoguard_common` after the demo.
 
 | Status | Code | When |
