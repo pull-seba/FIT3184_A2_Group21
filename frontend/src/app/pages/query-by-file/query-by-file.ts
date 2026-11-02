@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
 import { ApiService } from '../../api/api.service';
+import { DeleteAction } from '../../components/gallery/actions/delete/delete';
 import { Gallery } from '../../components/gallery/gallery';
 import { FileSummary } from '../../components/gallery/file-summary';
 import { PHOTO_TYPES, photoProblem, problem, readPhoto } from './read-file';
@@ -15,7 +16,7 @@ interface ByFileResponse {
 
 @Component({
   selector: 'app-query-by-file',
-  imports: [MatButtonModule, MatIconModule, Gallery],
+  imports: [MatButtonModule, MatIconModule, Gallery, DeleteAction],
   templateUrl: './query-by-file.html',
   styleUrl: './query-by-file.css',
 })
