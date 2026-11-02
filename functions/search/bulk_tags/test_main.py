@@ -76,6 +76,30 @@ def changes_by_file_id(db):
     return {ref.id: changes for (ref, changes), _ in updates}
 
 
+def test_answers_cors_preflight_without_a_token():
+    with app.test_request_context("/tags/bulk", method="OPTIONS"):
+        body, status, headers = main.handler(flask.request)
+    assert (body, status) == ("", 204)
+    assert headers["Access-Control-Allow-Origin"] == "*"
+    assert "POST" in headers["Access-Control-Allow-Methods"]
+    assert "Authorization" in headers["Access-Control-Allow-Headers"]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"json": bulk()},  # 401
+        {"data": "not json", "headers": gateway_headers()},  # 400
+        {"json": bulk(), "headers": gateway_headers()},  # 200
+    ],
+)
+def test_every_response_allows_the_app_origin(db, kwargs):
+    firestore_holds(db, {JPG_ID: ACTIVE})
+    with app.test_request_context("/tags/bulk", method="POST", **kwargs):
+        _, _, headers = main.handler(flask.request)
+    assert headers["Access-Control-Allow-Origin"] == "*"
+
+
 def test_rejects_request_without_gateway_claims():
     _, status = call(bulk(), headers={})
     assert status == 401

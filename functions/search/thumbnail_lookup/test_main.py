@@ -80,6 +80,33 @@ def signed_key():
     return main.gcs.bucket.return_value.blob.call_args.args[0]
 
 
+def test_answers_cors_preflight_without_a_token():
+    with app.test_request_context("/search/thumbnail", method="OPTIONS"):
+        body, status, headers = main.handler(flask.request)
+    assert (body, status) == ("", 204)
+    assert headers["Access-Control-Allow-Origin"] == "*"
+    assert "POST" in headers["Access-Control-Allow-Methods"]
+    assert "Authorization" in headers["Access-Control-Allow-Headers"]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"json": {"thumbnail_url": SIGNED_THUMBNAIL_URL}},  # 401
+        {"data": "not json", "headers": gateway_headers()},  # 400
+        {
+            "json": {"thumbnail_url": SIGNED_THUMBNAIL_URL},
+            "headers": gateway_headers(),
+        },  # 200
+    ],
+)
+def test_every_response_allows_the_app_origin(clouds, kwargs):
+    firestore_returns(clouds, record())
+    with app.test_request_context("/search/thumbnail", method="POST", **kwargs):
+        _, _, headers = main.handler(flask.request)
+    assert headers["Access-Control-Allow-Origin"] == "*"
+
+
 def test_rejects_request_without_gateway_claims():
     _, status = call({"thumbnail_url": SIGNED_THUMBNAIL_URL}, headers={})
     assert status == 401
