@@ -2,20 +2,16 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "ManageTheAlertTopicsSubscribers",
-      "Effect": "Allow",
-      "Action": ["sns:Subscribe", "sns:ListSubscriptionsByTopic"],
-      "Resource": "arn:aws:sns:us-east-1:<account-id>:ecoguard-tag-alerts"
-    },
-    {
-      "Sid": "ReadAndChangeOneSubscription",
+      "Sid": "ManageTheAlertTopicsSubscriptions",
       "Effect": "Allow",
       "Action": [
+        "sns:Subscribe",
+        "sns:ListSubscriptionsByTopic",
         "sns:GetSubscriptionAttributes",
         "sns:SetSubscriptionAttributes",
         "sns:Unsubscribe"
       ],
-      "Resource": "arn:aws:sns:us-east-1:<account-id>:ecoguard-tag-alerts:*"
+      "Resource": "arn:aws:sns:us-east-1:<account-id>:ecoguard-tag-alerts"
     }
   ]
 }
