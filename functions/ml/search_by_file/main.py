@@ -31,7 +31,7 @@ credentials, _ = google.auth.default()
 
 DERIVED_BUCKET = "ecoguard-g21-derived"
 DOWNLOAD_URL_MINUTES = 60
-# Videos are accepted uploads but not searchable by file.
+# Images only: the search by file page sends a video as frames, one per request.
 IMAGE_TYPES = [kind for kind in ACCEPTED if kind.startswith("image/")]
 
 # From infra/gateway/README.md. The browser's preflight reaches us with no

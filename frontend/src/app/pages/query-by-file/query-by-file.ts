@@ -6,7 +6,15 @@ import { ApiService } from '../../api/api.service';
 import { DeleteAction } from '../../components/gallery/actions/delete/delete';
 import { Gallery } from '../../components/gallery/gallery';
 import { FileSummary } from '../../components/gallery/file-summary';
-import { PHOTO_TYPES, photoProblem, problem, readPhoto } from './read-file';
+import {
+  PHOTO_TYPES,
+  photoProblem,
+  problem,
+  readFrames,
+  readPhoto,
+  VIDEO_TYPES,
+  videoProblem,
+} from './read-file';
 
 // POST /search/by-file (docs/contracts/api-routes.md).
 interface ByFileResponse {
@@ -22,8 +30,9 @@ interface ByFileResponse {
 })
 export class QueryByFile implements OnDestroy {
   private readonly api = inject(ApiService);
-  readonly accepted = PHOTO_TYPES.join(',');
+  readonly accepted = [...PHOTO_TYPES, ...VIDEO_TYPES].join(',');
   readonly file = signal<File | null>(null);
+  readonly isVideo = computed(() => VIDEO_TYPES.includes(this.file()?.type ?? ''));
   readonly preview = signal<string | null>(null);
   readonly loading = signal(false);
   readonly error = signal('');
@@ -42,7 +51,7 @@ export class QueryByFile implements OnDestroy {
     const file = input.files?.[0];
     input.value = ''; // so choosing the same file again still fires (change)
     if (!file) return;
-    const reason = photoProblem(file);
+    const reason = VIDEO_TYPES.includes(file.type) ? videoProblem(file) : photoProblem(file);
     this.error.set(reason ?? '');
     this.setFile(reason ? null : file);
     this.detected.set(null);
@@ -56,10 +65,9 @@ export class QueryByFile implements OnDestroy {
     this.error.set('');
     this.detected.set(null);
     try {
-      const response = await this.api.post<ByFileResponse>('/search/by-file', {
-        file_base64: await readPhoto(file),
-        content_type: 'image/jpeg', // readPhoto always sends JPEG
-      });
+      const response = this.isVideo()
+        ? await this.searchVideo(file)
+        : await this.searchImage(await readPhoto(file));
       this.detected.set(response.detected_tags);
       this.results.set(response.results);
     } catch (err) {
@@ -72,6 +80,30 @@ export class QueryByFile implements OnDestroy {
 
   ngOnDestroy(): void {
     this.setFile(null);
+  }
+
+  private searchImage(base64: string): Promise<ByFileResponse> {
+    return this.api.post<ByFileResponse>('/search/by-file', {
+      file_base64: base64,
+      content_type: 'image/jpeg', // readPhoto and readFrames always send JPEG
+    });
+  }
+
+  // The route takes images, so a video is searched by its frames. A tag's count is its highest
+  // in any one frame, never the sum. Each species found then needs a minimum of 1, the same rule
+  // search_by_file uses for a photo, and all of them must be in a file (AND).
+  private async searchVideo(file: File): Promise<ByFileResponse> {
+    const detected: Record<string, number> = {};
+    for (const frame of await readFrames(file)) {
+      const { detected_tags } = await this.searchImage(frame);
+      for (const [tag, count] of Object.entries(detected_tags)) {
+        detected[tag] = Math.max(detected[tag] ?? 0, count);
+      }
+    }
+    const tags = Object.keys(detected);
+    if (!tags.length) return { detected_tags: detected, results: [] };
+    const { results } = await this.api.post<{ results: FileSummary[] }>('/search/tags', tags);
+    return { detected_tags: detected, results };
   }
 
   // The preview is an object URL pointing at the file in memory; revoking the old one frees it.

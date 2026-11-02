@@ -6,10 +6,15 @@
     stored.
   </p>
 
+  <p class="hint">
+    Or choose a video (MP4 or MOV, up to 200 MB). It stays in your browser: only one frame every 10
+    seconds is sent to the search, and the frames are never stored either.
+  </p>
+
   <div class="controls">
     <label class="choose">
       <mat-icon aria-hidden="true">image_search</mat-icon>
-      {{ file() ? 'Choose another photo' : 'Choose a photo' }}
+      {{ file() ? 'Choose another file' : 'Choose a photo or video' }}
       <input type="file" [accept]="accepted" (change)="choose($event)" />
     </label>
     <button mat-flat-button type="button" [disabled]="!file() || loading()" (click)="search()">
@@ -18,7 +23,17 @@
   </div>
 
   @if (preview(); as preview) {
-    <img class="preview" [src]="preview" [alt]="'Photo to search with: ' + file()?.name" />
+    @if (isVideo()) {
+      <video
+        class="preview"
+        [src]="preview"
+        controls
+        muted
+        [attr.aria-label]="'Video to search with: ' + file()?.name"
+      ></video>
+    } @else {
+      <img class="preview" [src]="preview" [alt]="'Photo to search with: ' + file()?.name" />
+    }
   }
 
   @if (error()) {
@@ -31,7 +46,7 @@
       @if (detectedText()) {
         Detected: {{ detectedText() }}
       } @else {
-        No target species were detected in this photo.
+        No target species were detected in this {{ isVideo() ? 'video' : 'photo' }}.
       }
     </p>
   }
