@@ -6,7 +6,8 @@ Owner: member 3. Rubric 2.2.4. Route: docs/contracts/api-routes.md.
 With a photo, the photo is embedded in memory by Vertex AI, with the model in
 config/model that embedded every sighting, and Firestore's vector search
 finds the nearest public sightings. Without a photo, sightings are filtered
-by species and colour, newest first. The photo is never written anywhere:
+by species and colour, newest first. Either way a breed, if sent, is checked
+afterwards in Python. The photo is never written anywhere:
 this function makes no Cloud Storage or Firestore write, and logs only the
 other request fields and the result count.
 """
@@ -112,8 +113,6 @@ def validate(body) -> dict:
             "bad_since_days",
             f"since_days must be a whole number from 1 to {MAX_SINCE_DAYS}",
         )
-    # Accepted but not used: every sighting has breed null (no breed model),
-    # so filtering on it would match nothing.
     if breed is not None and not isinstance(breed, str):
         raise BadRequest(400, "bad_breed", "breed must be a string or null")
     if image_base64 is not None and (
@@ -126,6 +125,7 @@ def validate(body) -> dict:
         "image_base64": image_base64,
         "species": species,
         "colour": colour,
+        "breed": breed.strip().lower() if breed else None,
         "since_days": since_days,
     }
 
@@ -154,7 +154,15 @@ def shrink_photo(image_base64: str) -> bytes:
     return out.getvalue()
 
 
-def photo_search(photo: bytes, species, colour, cutoff) -> list[dict]:
+def breed_matches(sighting: dict, breed: str | None) -> bool:
+    """True with no breed asked for, or when the asked words are part of the
+    sighting's breed: "labrador" finds "Labrador Retriever". Breeds are
+    Rekognition's own label names, so there's no fixed list to check against.
+    Checked here because a Firestore filter would need new indexes."""
+    return not breed or breed in (sighting.get("breed") or "").lower()
+
+
+def photo_search(photo: bytes, species, colour, breed, cutoff) -> list[dict]:
     """The public sightings nearest to the photo, best first."""
     config = detect.model_config(db)
     query_vector = embed.embed_image(photo, config)
@@ -176,11 +184,13 @@ def photo_search(photo: bytes, species, colour, cutoff) -> list[dict]:
     found = []
     for snapshot in nearest.stream():
         sighting = snapshot.to_dict()
-        # The vector indexes have no date or colour field, so these two
+        # The vector indexes have no date, colour or breed field, so these
         # filters run here, on the 50 nearest.
         if sighting["uploaded_at"] < cutoff:
             continue
         if colour and sighting.get("colour") != colour:
+            continue
+        if not breed_matches(sighting, breed):
             continue
         found.append(
             {
@@ -196,9 +206,10 @@ def photo_search(photo: bytes, species, colour, cutoff) -> list[dict]:
     return found
 
 
-def description_search(species, colour, cutoff) -> list[dict]:
+def description_search(species, colour, breed, cutoff) -> list[dict]:
     """Public sightings of the species (and colour) in the window, newest
-    first. Matches the two sightings indexes that end in uploaded_at."""
+    first. Matches the two sightings indexes that end in uploaded_at. Breed
+    is checked afterwards, on the 50 the query returns."""
     query = (
         db.collection("sightings")
         .where(filter=firestore.FieldFilter("species", "==", species))
@@ -220,6 +231,7 @@ def description_search(species, colour, cutoff) -> list[dict]:
             "score": None,  # no photo to compare with
         }
         for snapshot in query.stream()
+        if breed_matches(snapshot.to_dict(), breed)
     ]
 
 
@@ -325,11 +337,15 @@ def handler(request):
     try:
         if photo is not None:
             found = photo_search(
-                photo, query["species"], query["colour"], cutoff
+                photo,
+                query["species"],
+                query["colour"],
+                query["breed"],
+                cutoff,
             )
         else:
             found = description_search(
-                query["species"], query["colour"], cutoff
+                query["species"], query["colour"], query["breed"], cutoff
             )
         results = results_for(found)
     except Exception as exc:

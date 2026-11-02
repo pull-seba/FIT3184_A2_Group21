@@ -1,7 +1,7 @@
 """Cat and dog crops for lost pet search. Owner: member 3. Rubric 2.2.4.
 
 Each cat or dog Rekognition boxes becomes one sighting: its crop's Vertex AI
-embedding, its colour and its box. tagging writes them to
+embedding, its colour, its breed and its box. tagging writes them to
 sightings/{file_id}_{n} (docs/contracts/firestore-schema.md).
 """
 
@@ -20,6 +20,9 @@ COLOURS = TAGS.get("lost_pet_colours", [])
 PAD = 0.10  # 10% of the box on each side, so ears and tails stay in
 CROP_SIDE = 512  # Vertex AI embeds at about this size: smaller requests
 WHOLE_IMAGE = [0.0, 0.0, 1.0, 1.0]
+# Rekognition files breeds under Dog or Cat in its label tree, next to these,
+# which aren't breeds (tools/testset/data/rekognition_raw.jsonl).
+NOT_BREEDS = {"puppy", "kitten", "hound", "white dog", "black cat"}
 
 _colour_vectors = {}  # (embedding model, species) -> {colour: vector}
 
@@ -84,6 +87,22 @@ def colour_of(vector: list[float], species: str, config: dict) -> str | None:
     return max(texts, key=lambda colour: cosine(vector, texts[colour]))
 
 
+def breed_of(labels: list[dict], species: str) -> str | None:
+    """The most confident breed label under this species, or None. Breeds
+    often score only 50-60, so request_min_confidence is their only threshold.
+    ponytail: the label describes the photo, not a box, so two dogs in a photo
+    share one breed; a breed per box would need a breed model."""
+    breeds = [
+        label
+        for label in labels
+        if species in [parent.lower() for parent in label["parents"]]
+        and label["name"].lower() not in NOT_BREEDS
+    ]
+    if not breeds:
+        return None
+    return max(breeds, key=lambda label: label["confidence"])["name"]
+
+
 def pets(image_bytes: bytes, labels: list[dict], config: dict) -> list[dict]:
     """One entry per cat or dog in the photo, with its embedding. A photo
     with no pets costs no Pillow decode and no Vertex AI call."""
@@ -103,7 +122,7 @@ def pets(image_bytes: bytes, labels: list[dict], config: dict) -> list[dict]:
             {
                 "species": species,
                 "colour": colour_of(vector, species, config),
-                "breed": None,  # the schema allows null: no breed model
+                "breed": breed_of(labels, species),
                 "embedding": vector,
                 "bbox": box,  # Rekognition's box, unpadded
             }

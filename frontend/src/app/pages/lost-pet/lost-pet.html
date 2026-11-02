@@ -2,8 +2,8 @@
   <h1>Lost pet</h1>
   <p class="hint">
     Look for your cat or dog in other people's uploads. Add a photo of your pet to see the closest
-    lookalikes, or describe it by species and colour. Only public sightings are searched. Your photo
-    is only used for this search and is never stored.
+    lookalikes, or describe it by species, colour and breed. Only public sightings are searched.
+    Your photo is only used for this search and is never stored.
   </p>
 
   <div class="controls">
@@ -45,6 +45,12 @@
           <mat-option [value]="name">{{ name }}</mat-option>
         }
       </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Breed</mat-label>
+      <input matInput #breedBox autocomplete="off" (input)="breed.set(breedBox.value)" />
+      <mat-hint>Optional, such as Husky or Siamese</mat-hint>
     </mat-form-field>
 
     <mat-form-field appearance="outline">

@@ -89,14 +89,16 @@ def file_record(uploaded_at=RECENT, status="active"):
     }
 
 
-def sighting(file_id, n=0, distance=None, colour="ginger", uploaded_at=RECENT):
+def sighting(
+    file_id, n=0, distance=None, colour="ginger", uploaded_at=RECENT, breed=None
+):
     """A sightings snapshot as Firestore streams it. find_nearest adds the
     distance field named by distance_result_field."""
     data = {
         "file_id": file_id,
         "species": "cat",
         "colour": colour,
-        "breed": None,
+        "breed": breed,
         "uploaded_at": uploaded_at,
         "is_public": True,
     }
@@ -386,10 +388,36 @@ def test_empty_colour_and_breed_do_not_filter(db):
         files={"a": file_record()},
     )
     body, status, _ = call(
-        {"image_base64": PHOTO_BASE64, "colour": "", "breed": "Siamese"}
+        {"image_base64": PHOTO_BASE64, "colour": "", "breed": ""}
     )
     assert (status, ids(body)) == (200, ["a"])
     assert filters_sent(db) == [("is_public", "==", True)]
+
+
+def test_photo_search_filters_breed_after_the_vector_query(db):
+    firestore_returns(
+        db,
+        sightings=[
+            sighting("husky", distance=0.1, breed="Husky"),
+            sighting("unknown", distance=0.2),
+            sighting("lab", distance=0.3, breed="Labrador Retriever"),
+        ],
+        files={name: file_record() for name in ("husky", "unknown", "lab")},
+    )
+    body, _, _ = call({"image_base64": PHOTO_BASE64, "breed": " labrador "})
+    assert ids(body) == ["lab"]
+    assert "breed" not in [field for field, _, _ in filters_sent(db)]
+
+
+def test_description_search_filters_breed_too(db):
+    firestore_returns(
+        db,
+        sightings=[sighting("husky", breed="Husky"), sighting("unknown")],
+        files={"husky": file_record(), "unknown": file_record()},
+    )
+    body, _, _ = call({"species": "dog", "breed": "HUSKY"})
+    assert ids(body) == ["husky"]
+    assert "breed" not in [field for field, _, _ in filters_sent(db)]
 
 
 def test_one_result_per_file_keeping_its_best_sighting(db):
