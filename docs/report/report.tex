@@ -52,7 +52,7 @@
 
 % --- Shortcuts ----------------------------------------------------------------
 \newcommand{\code}[1]{\textit{#1}} % italics keep identifiers in Times New Roman
-\newcommand{\WORDS}{992}
+\newcommand{\WORDS}{995}
 % What the team still has to supply or confirm, in red so it can't be missed.
 \newcommand{\needsinput}[1]{\textcolor{red}{\textbf{#1}}}
 % Shows screenshots/<name>.png once the file exists, a reminder until then.
@@ -106,7 +106,7 @@ Aussie EcoGuard is a centralised, multi-cloud serverless system where researcher
 
 \section{Architecture}
 
-The architecture in Figure~\ref{fig:architecture} spans AWS (\code{us-east-1}) and GCP (\code{us-east1}). AWS hosts the Cognito user and identity pools, a Lex V2 chatbot with its fulfilment Lambda, an SNS publisher Lambda, and Rekognition \code{DetectLabels}. GCP hosts API Gateway, Python 3.12 Cloud Run functions, Firestore, Cloud Storage, Eventarc, Pub/Sub and Vertex AI. \needsinput{The Angular 21 app runs from its local development server.}
+The architecture in Figure~\ref{fig:architecture} spans AWS (\code{us-east-1}) and GCP (\code{us-east1}). AWS hosts the Cognito user and identity pools, a Lex V2 chatbot with its fulfilment Lambda, an SNS publisher Lambda, and Rekognition \code{DetectLabels}. GCP hosts API Gateway, Python 3.12 Cloud Run functions, Firestore, Cloud Storage, Eventarc, Pub/Sub and Vertex AI. The Angular 21 app runs from its local development server.
 
 An upload starts when the browser computes the file's SHA-256 hash and requests a signed PUT URL. If no duplicate exists, the file uploads directly to Cloud Storage. Through Eventarc, the storage event starts two Cloud Run services, which can finish in either order: one verifies the hash, writes the record and makes a compressed, aspect-ratio-preserving OpenCV thumbnail; the other detects species tags. Videos yield one frame per 10 seconds and a poster thumbnail, with frames reaching the tagging service through a \code{frames-ready} topic. Tag changes fire a Firestore trigger that publishes alerts to Pub/Sub.
 
@@ -157,7 +157,7 @@ Every backend route except CORS preflight requires a valid Cognito ID token, and
 Rekognition undercounts groups of cane toads. In the 140-photo bake-off, photos with two or more animals got a count of 2+ for 100\% of pigs, 67\% of foxes, and 33\% each of toads and rabbits, with one over-count. A counting model could be added later through \code{config/model}. Also partly complete:
 
 \begin{itemize}
-  \item \needsinput{\textbf{Hosting:} Firebase Hosting remains to be enabled, with its origin added to the media bucket's CORS.}
+  \item \textbf{Hosting:} The app runs on the Angular development server instead of Firebase Hosting, so it has no public address.
   \item \textbf{Temporary passwords:} Self sign-up verifies email by code, so only admin-created users receive a temporary password to change.
   \item \textbf{Search by file:} It accepts photos only; videos would need frame extraction during the request.
   \item \textbf{Lost pet search:} It filters by species and colour, not breed, because no model gives breeds.
@@ -173,13 +173,13 @@ Rekognition undercounts groups of cane toads. In the 140-photo bake-off, photos 
   \textbf{Name and ID} & \textbf{Percentage} & \textbf{Contribution} \\
   \midrule
   \endhead
-  Sebastian Gracious Pullanthyanickal, 33878986 & \needsinput{[\%]} & Member 1 (Identity \& Cross-cloud): Owned API Gateway, the Angular shell and API client, Cognito sign-up, sign-in and sign-out, tag alert emails, the subscriptions function with its federated SNS role, and the Alerts page. \\
+  Sebastian Gracious Pullanthyanickal, 33878986 & 25\% & Member 1 (Identity \& Cross-cloud): Owned API Gateway, the Angular shell and API client, Cognito sign-up, sign-in and sign-out, tag alert emails, the subscriptions function with its federated SNS role, and the Alerts page. \\
   \addlinespace
-  Dylan Gorgioski, 33879419 & \needsinput{[\%]} & Member 2 (Ingestion \& Storage): Signed-URL browser uploads to Cloud Storage, SHA-256 deduplication, thumbnails, video frame extraction and file deletion, with the Upload page, the gallery's Delete action and the Firestore and storage contracts. \\
+  Dylan Gorgioski, 33879419 & 25\% & Member 2 (Ingestion \& Storage): Signed-URL browser uploads to Cloud Storage, SHA-256 deduplication, thumbnails, video frame extraction and file deletion, with the Upload page, the gallery's Delete action and the Firestore and storage contracts. \\
   \addlinespace
-  Danny Wu, 34383263 & \needsinput{[\%]} & Member 3 (ML \& Detection): Built Rekognition tagging with its federated AWS role, the tag vocabulary and model config, the 140-photo bake-off, Vertex AI embeddings, search by file with in-memory tagging, lost pet search, and those two pages. \\
+  Danny Wu, 34383263 & 25\% & Member 3 (ML \& Detection): Built Rekognition tagging with its federated AWS role, the tag vocabulary and model config, the 140-photo bake-off, Vertex AI embeddings, search by file with in-memory tagging, lost pet search, and those two pages. \\
   \addlinespace
-  Jenul Ferdinand, 33119805 & \needsinput{[\%]} & Member 4 (Search \& Chatbot): Built tag queries, thumbnail lookup, the results gallery, bulk tag editing, and the Search and Chat pages. Configured the Lex V2 bot and its fulfilment Lambda, and set up the GCP project. \\
+  Jenul Ferdinand, 33119805 & 25\% & Member 4 (Search \& Chatbot): Built tag queries, thumbnail lookup, the results gallery, bulk tag editing, and the Search and Chat pages. Configured the Lex V2 bot and its fulfilment Lambda, and set up the GCP project. \\
   \bottomrule
 \end{xltabular}
 %TC:endignore
@@ -194,7 +194,7 @@ Rekognition undercounts groups of cane toads. In the 140-photo bake-off, photos 
   \textbf{Feature} & \textbf{Steps} & \textbf{Expected Result} \\
   \midrule
   \endhead
-  \textbf{Start} & \needsinput{Run \code{cd frontend \&\& npm install \&\& npm start}, then open \url{http://localhost:5173}.} & The sign-in page opens. Other pages redirect here until you sign in. \\
+  \textbf{Start} & Run \code{cd frontend \&\& npm install \&\& npm start}, then open \url{http://localhost:5173}. Keep port 5173: the media bucket allows uploads only from this origin. & The sign-in page opens. Other pages redirect here until you sign in. After sign-in, the Home page links to every feature. \shot{start} \\
   \addlinespace
   \textbf{Auth \& Sign-out} & Sign up with your name, email and password, then enter the emailed code. Press Sign out, then sign in again. & Verifying the code signs you in to the Home page. Sign out returns you to sign-in. \shot{auth} \\
   \addlinespace
