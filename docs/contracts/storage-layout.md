@@ -19,7 +19,7 @@ Photos sent to `/search/by-file` and `/search/lost-pet` are never written to any
 ## Keys
 - `<file_id>`: lowercase hex SHA-256 of the file's bytes.
 - `<ext>`: from the content type: `jpg`, `png`, `webp`, `mp4`, `mov`.
-- Thumbnails: JPEG, longest side 320 px, aspect ratio preserved, quality 80. Videos get a poster thumbnail from their first frame at the same key.
+- Thumbnails: JPEG, longest side at most 320 px (a smaller image keeps its size), aspect ratio preserved, quality 80. Videos get a poster thumbnail from their first frame at the same key.
 - Frames: one per 10 s of video. `<index>` is four digits counting from `0000` (0 s); `0001` is 10 s. A clip shorter than 10 s gives one frame.
 
 ## Accepted uploads
