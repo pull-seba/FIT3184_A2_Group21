@@ -2,6 +2,7 @@ import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import tagList from '../../../../../shared/tags.json';
@@ -15,7 +16,14 @@ type LostPetResult = FileSummary & { score: number | null; sighting_id: string }
 
 @Component({
   selector: 'app-lost-pet',
-  imports: [MatButtonModule, MatFormFieldModule, MatIconModule, MatSelectModule, Gallery],
+  imports: [
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatSelectModule,
+    Gallery,
+  ],
   templateUrl: './lost-pet.html',
   styleUrl: './lost-pet.css',
 })
@@ -30,6 +38,7 @@ export class LostPet implements OnDestroy {
   readonly preview = signal<string | null>(null);
   readonly species = signal(''); // '' = any species, only allowed with a photo
   readonly colour = signal(''); // '' = any colour
+  readonly breed = signal(''); // '' = any breed
   readonly sinceDays = signal(30);
   readonly loading = signal(false);
   readonly error = signal('');
@@ -66,7 +75,7 @@ export class LostPet implements OnDestroy {
         image_base64: file ? await readPhoto(file) : undefined,
         species: this.species() || null,
         colour: this.colour() || null,
-        breed: null,
+        breed: this.breed().trim() || null,
         since_days: this.sinceDays(),
       });
       // The gallery draws a "% match" badge whenever score !== undefined, so a null score (a

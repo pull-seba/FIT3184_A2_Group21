@@ -17,7 +17,7 @@ CONFIG = {
 }
 
 
-def label(name, confidence, boxes=(), instances=None):
+def label(name, confidence, boxes=(), instances=None, parents=("Animal",)):
     """A label in rekognition.normalise's shape."""
     boxes = [list(b) for b in boxes]
     if instances is None:
@@ -27,7 +27,7 @@ def label(name, confidence, boxes=(), instances=None):
         "confidence": confidence,
         "instances": instances,
         "boxes": boxes,
-        "parents": ["Animal"],
+        "parents": list(parents),
     }
 
 
@@ -109,6 +109,41 @@ def test_photo_with_no_pets_is_never_decoded_or_embedded(embed):
 def test_unreadable_photo_with_a_cat_is_a_bad_image():
     with pytest.raises(BadImage):
         sightings.pets(b"not an image", [label("Cat", 97.0)], CONFIG)
+
+
+# ---------- breed ----------
+
+
+def test_breed_is_the_most_confident_label_under_the_species():
+    labels = [
+        label("Dog", 97.0),
+        label("Husky", 55.0, parents=["Dog", "Animal"]),
+        label("Poodle", 60.0, parents=["Dog", "Animal"]),
+    ]
+    assert sightings.pets(jpeg(), labels, CONFIG)[0]["breed"] == "Poodle"
+
+
+def test_generic_labels_are_not_breeds():
+    labels = [
+        label("Dog", 97.0),
+        label("Puppy", 99.0, parents=["Dog", "Animal"]),
+        label("Hound", 76.0, parents=["Dog", "Animal"]),
+        label("White Dog", 56.0, parents=["Dog", "Animal"]),
+    ]
+    assert sightings.pets(jpeg(), labels, CONFIG)[0]["breed"] is None
+
+
+def test_a_breed_only_goes_to_its_own_species():
+    labels = [
+        label("Cat", 97.0),
+        label("Dog", 97.0),
+        label("Siamese", 55.0, parents=["Cat", "Animal"]),
+    ]
+    found = sightings.pets(jpeg(), labels, CONFIG)
+    assert {p["species"]: p["breed"] for p in found} == {
+        "cat": "Siamese",
+        "dog": None,
+    }
 
 
 # ---------- crops ----------
