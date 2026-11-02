@@ -1,0 +1,175 @@
+% Multi-cloud architecture diagram, \input by report.tex. Coordinates are in cm.
+%
+% Icons (icons/*.pdf) are the official sets, unmodified, converted from SVG to PDF:
+%   AWS Architecture Icons, release 07312026: https://aws.amazon.com/architecture/icons/
+%   Google Cloud icons: https://cloud.google.com/icons
+%   Google Cloud logo: https://www.gstatic.com/cgc/google-cloud-logo.svg
+\definecolor{ink}{HTML}{202124}
+\definecolor{wire}{HTML}{5F6368}
+\definecolor{crosscloud}{HTML}{E8710A}
+\definecolor{awsline}{HTML}{232F3E}
+\definecolor{gcpfill}{HTML}{F1F3F4}
+\definecolor{gcpline}{HTML}{9AA0A6}
+
+\newcommand{\lblfont}{\fontsize{7.5}{9}\selectfont}
+\newcommand{\edgefont}{\fontsize{7}{8.2}\selectfont}
+\newcommand{\iconsize}{1.05cm}
+
+% \svc{node name}{icon file}{x,y}{label side}{label}
+\newcommand{\svc}[5]{%
+  \node[inner sep=0pt] (#1) at (#3) {\includegraphics[width=\iconsize]{icons/#2}};
+  \node[lbl,#4=2pt of #1] {#5};
+}
+% An inline cross-cloud badge for text inside a node; \smash keeps the row height even.
+\newcommand{\lnk}[1]{\smash{\tikz[baseline=-0.7ex]\node[badge]{#1};}}
+
+\begin{tikzpicture}[
+    x=1cm, y=1cm,
+    font=\sffamily\lblfont, text=ink,
+    lbl/.style={align=center, font=\sffamily\lblfont, inner sep=0pt},
+    edgelbl/.style={align=center, font=\sffamily\edgefont, inner sep=1.5pt},
+    req/.style={-{Stealth[length=1.9mm,width=1.5mm]}, draw=wire, line width=0.6pt},
+    evt/.style={req, dash pattern=on 2.4pt off 1.8pt},
+    link/.style={-{Stealth[length=2.6mm,width=2.1mm]}, draw=crosscloud, line width=1.3pt},
+    badge/.style={circle, fill=crosscloud, text=white, inner sep=0pt, minimum size=3.5mm,
+      font=\sffamily\bfseries\fontsize{7}{7}\selectfont},
+    card/.style={draw=wire, fill=white, rounded corners=2pt, line width=0.5pt},
+  ]
+
+  % ---------------------------- Browser and clouds ---------------------------- %
+  \draw[fill=gcpfill, draw=wire, rounded corners=2pt] (0,14.55) rectangle (27.3,15.4);
+  \node[anchor=center] at (13.65,14.975) {%
+    \includegraphics[height=0.6cm]{icons/aws-client}\hspace{2mm}%
+    \raisebox{1.6mm}{\fontsize{9}{10}\selectfont\textbf{User's web browser:}
+      Angular 21 single-page app with custom Cognito sign-in pages}};
+
+  \draw[draw=awsline, line width=0.9pt] (0,0.2) rectangle (8.35,14.1);
+  \draw[fill=gcpfill, draw=gcpline, line width=0.9pt] (9.75,0.2) rectangle (27.3,14.1);
+
+  \node[anchor=east] at (8.2,13.68) {%
+    \includegraphics[height=0.55cm]{icons/aws-cloud}\hspace{1.5mm}%
+    \raisebox{1.6mm}{\fontsize{8.5}{10}\selectfont\textbf{AWS Cloud}, us-east-1}};
+  \node[anchor=west] at (11.2,13.68) {%
+    \includegraphics[height=0.42cm]{icons/gcp-logo}\hspace{1.5mm}%
+    \raisebox{1mm}{\fontsize{8.5}{10}\selectfont us-east1}};
+
+  % ------------------------------- AWS services ------------------------------- %
+  \svc{up}{aws-cognito}{1.4,12}{below}{\textbf{Amazon Cognito}\\user pool: sign-up,\\sign-in, ID tokens}
+  \svc{ip}{aws-cognito}{4.3,12}{below}{\textbf{Amazon Cognito}\\identity pool: creds\\for the chat widget}
+  \svc{role}{aws-iam-role}{7.2,12}{below}{\textbf{IAM role}\\chat widget: only\\lex:RecognizeText}
+  \svc{lex}{aws-lex}{2.85,8.9}{below}{\textbf{Amazon Lex V2}\\ecoguard-chat}
+  \svc{lamc}{aws-lambda}{7.2,8.9}{below}{\textbf{AWS Lambda}\\chat fulfilment}
+  \svc{email}{aws-email}{1.4,5.7}{below}{\textbf{Email alerts}\\to subscribers}
+  \svc{sns}{aws-sns}{4.3,5.7}{below}{\textbf{Amazon SNS}\\ecoguard-tag-alerts,\\filter policy per user}
+  \svc{lamn}{aws-lambda}{7.2,5.7}{below}{\textbf{AWS Lambda}\\ecoguard-notify,\\checks the token}
+  \svc{sts}{aws-sts}{7.2,3}{left}{\textbf{AWS STS}\\AssumeRoleWithWebIdentity}
+  \svc{rek}{aws-rekognition}{7.2,1.3}{left}{\textbf{Amazon Rekognition}\\DetectLabels, bytes never stored}
+
+  % ------------------------------- GCP services ------------------------------- %
+  \svc{gw}{gcp-api-gateway}{10.85,8.9}{below}{\textbf{API Gateway}\\verifies\\Cognito JWT}
+  \node[inner sep=0pt] (der) at (19.3,12) {\includegraphics[width=\iconsize]{icons/gcp-cloud-storage}};
+  \node[lbl, anchor=north west, align=left] at (19.9,11.92) {\textbf{Cloud Storage}\\derived bucket};
+  \svc{pu}{gcp-cloud-run}{22.2,12}{above}{\textbf{Cloud Run function}\\process\_upload: OpenCV\\thumbs, 1 frame per 10 s}
+  \svc{ea}{gcp-eventarc}{24.85,12}{above}{\textbf{Eventarc}\\object finalized}
+  \svc{med}{gcp-cloud-storage}{26.3,12}{below}{\textbf{Cloud Storage}\\media bucket}
+  \svc{fs}{gcp-firestore}{20.75,8.9}{above}{\textbf{Firestore}\\files, sightings,\\config/model}
+  \svc{fr}{gcp-pubsub}{22.5,5.8}{right}{\textbf{Pub/Sub}\\frames-ready}
+  \svc{otc}{gcp-cloud-run}{14.6,5.7}{below}{\textbf{Cloud Run function}\\on\_tags\_changed}
+  \svc{tc}{gcp-pubsub}{10.85,5.7}{below}{\textbf{Pub/Sub}\\tag-changes}
+  \svc{vx}{gcp-vertex-ai}{26.3,2}{below}{\textbf{Vertex AI}\\multimodal\\embeddings}
+
+  % The nine HTTP functions behind the gateway.
+  \node[card, anchor=north west, inner sep=3pt] (http) at (12.2,12.45) {%
+    \begin{tabular}{@{}l@{\hspace{3pt}}l@{}}
+      \multicolumn{2}{@{}l@{}}{\includegraphics[height=0.62cm]{icons/gcp-cloud-run}\hspace{1.5mm}%
+        \begin{tabular}[b]{@{}l@{}}\textbf{Cloud Run functions (HTTP)}\\Python 3.12, one service account each\end{tabular}}\\[2pt]
+      \textbf{upload\_init} & signed PUT URL, SHA-256 dedup\\
+      \textbf{get\_file} & signed GET URL\\
+      \textbf{delete\_files} & objects, sightings, record\\
+      \textbf{tag\_query} & tags with min counts, species\\
+      \textbf{thumbnail\_lookup} & thumbnail to full size\\
+      \textbf{bulk\_tags} & add or remove tags\\
+      \textbf{search\_by\_file} & in memory, never stored \lnk{4}\\
+      \textbf{lost\_pet} & Vertex AI + vector search\\
+      \textbf{subscriptions} & alert tags held in SNS \lnk{4}
+    \end{tabular}};
+
+  % The tagging service: one codebase deployed with two triggers.
+  \node[card, anchor=south west, minimum width=4.8cm, minimum height=2.7cm] (tag) at (18.2,0.9) {};
+  \node[inner sep=0pt, anchor=west] at (18.4,2.25) {\includegraphics[width=\iconsize]{icons/gcp-cloud-run}};
+  \node[lbl, anchor=west, align=left] at (19.6,2.25) {\textbf{Cloud Run functions}\\tagging, tagging-frames:\\labels to tags and counts,\\model from config/model};
+
+  % ------------------------------ From the browser ---------------------------- %
+  \draw[req] (1.4,14.55) -- (up.north);
+  \draw[req] (4.3,14.55) -- (ip.north);
+  \draw[req] (2.85,14.55) -- (lex.north);
+  \draw[link] (10.85,14.55) -- (gw.north);
+  \draw[req] (19.3,14.55) -- (der.north);
+  \draw[req] (26.3,14.55) -- (med.north);
+
+  \node[edgelbl, anchor=west] at (1.42,13) {sign-up,\\sign-in};
+  \node[edgelbl, anchor=east] at (4.28,13) {ID token for\\temp creds};
+  \node[edgelbl, anchor=west] at (2.87,9.95) {RecognizeText\\+ idToken};
+  \node[badge] at (10.85,13.15) {1};
+  \node[edgelbl, anchor=west] at (10.95,12.72) {HTTPS +\\ID token};
+  \node[edgelbl, anchor=east] at (19.28,13.1) {signed GET URLs:\\thumbnails};
+  \node[edgelbl, anchor=east] at (26.28,13.62) {signed PUT,\\GET URLs};
+
+  % ---------------------------- Inside AWS and GCP ---------------------------- %
+  \draw[req] (ip) -- node[edgelbl, above] {assumes} (role);
+  \draw[req] (lex) -- node[edgelbl, above] {fulfilment} (lamc);
+  \draw[req] (lamn) -- node[edgelbl, above] {publish} (sns);
+  \draw[req] (sns) -- node[edgelbl, above] {email} (email);
+
+  \draw[req] (gw) -- node[edgelbl, above] {invoke} (gw -| http.west);
+  \draw[req, <->, >={Stealth[length=1.9mm,width=1.5mm]}] (http.east |- fs) -- node[edgelbl, above] {read, write} (fs);
+
+  \draw[evt] (med) -- (ea);
+  \draw[evt] (ea) -- (pu);
+  \draw[req] (pu) -- node[edgelbl, above] {thumbs/,\\frames/} (der);
+
+  \draw[evt] (ea.south) -- (24.85,3) -- (23,3);
+  \node[edgelbl, anchor=east] at (24.83,7.9) {images};
+  \draw[req] (21.9,11.475) -- (21.9,8.9) -- (fs.east);
+  \node[edgelbl, anchor=east] at (21.88,10.95) {base record};
+  \draw[evt] (22.5,11.475) -- (fr.north);
+  \node[edgelbl, anchor=west] at (22.52,8.4) {publish\\(videos)};
+  \draw[evt] (fr.south) -- (22.5,3.6);
+  \node[edgelbl, anchor=west] at (22.52,4.4) {push};
+  \draw[req] (21.05,3.6) -- (21.05,8.375);
+  \node[edgelbl, anchor=west] at (21.07,5) {tags,\\sightings};
+  \draw[evt] (20.45,8.375) -- (20.45,5.7) -- (otc.east);
+  \node[edgelbl, anchor=south] at (17.7,5.72) {Eventarc: tags written};
+  \draw[evt] (otc) -- node[edgelbl, above] {publish} (tc);
+  \draw[req] (23,2) -- node[edgelbl, above] {embed cat,\\dog crops} (vx);
+
+  % --------------------------- Other cross-cloud links ------------------------ %
+  \draw[link] (lamc) -- (gw);
+  \node[badge] at (9.05,8.9) {2};
+  \node[edgelbl, anchor=south] at (9.05,9.08) {user's\\ID token};
+
+  \draw[link] (tc) -- (lamn);
+  \node[badge] at (9.05,5.7) {3};
+  \node[edgelbl, anchor=south] at (9.05,5.88) {push +\\Google\\OIDC token};
+
+  \draw[link] (18.2,3) -- (sts);
+  \node[badge] at (9.05,3) {4};
+  \node[edgelbl, anchor=south] at (13.5,3.02) {Google ID token to temporary AWS credentials};
+
+  \draw[link] (18.2,1.3) -- (rek);
+  \node[badge] at (9.05,1.3) {4};
+  \node[edgelbl, anchor=south] at (13.5,1.32) {DetectLabels on image bytes};
+
+  \draw[link] (http.south -| 13,7) -- (13,7) -- (4.3,7) -- (sns.north);
+  \node[badge] at (9.05,7) {4};
+  \node[edgelbl, anchor=south] at (6.4,7.02) {STS creds: subscribe, filter policy};
+
+  % ---------------------------------- Legend ---------------------------------- %
+  \draw[link] (0,-0.25) -- (0.9,-0.25);
+  \node[badge] at (0.4,-0.25) {4};
+  \node[lbl, anchor=west] at (1,-0.25) {cross-cloud link, no stored keys: Cognito JWTs, Google-signed OIDC tokens, STS web-identity federation};
+  \draw[req] (15.9,-0.25) -- (16.8,-0.25);
+  \node[lbl, anchor=west] at (16.9,-0.25) {request};
+  \draw[evt] (18.3,-0.25) -- (19.2,-0.25);
+  \node[lbl, anchor=west] at (19.3,-0.25) {event (Eventarc, Pub/Sub)};
+\end{tikzpicture}
