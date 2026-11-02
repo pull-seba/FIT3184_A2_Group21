@@ -1,5 +1,5 @@
 import { DatePipe, PercentPipe } from '@angular/common';
-import { Component, computed, inject, input, model, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, model, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
@@ -31,6 +31,16 @@ export class Gallery {
   );
   readonly placeholderTiles = Array.from({ length: 8 }, (_, index) => index);
   readonly describe = describe;
+
+  constructor() {
+    // A new search starts with nothing selected. This can't watch files instead:
+    // TagsAction updates files after a bulk edit and keeps the selection on purpose.
+    effect(() => {
+      if (this.loading()) {
+        this.clearSelection();
+      }
+    });
+  }
 
   isSelected(file: FileSummary): boolean {
     return this.selectedIds().has(file.file_id);
