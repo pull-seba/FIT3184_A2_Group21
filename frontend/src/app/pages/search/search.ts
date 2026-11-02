@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 
 import { ApiService } from '../../api/api.service';
+import { DeleteAction } from '../../components/gallery/actions/delete/delete';
 import { TagsAction } from '../../components/gallery/actions/tags/tags';
 import { FileSummary } from '../../components/gallery/file-summary';
 import { Gallery } from '../../components/gallery/gallery';
@@ -26,6 +27,7 @@ interface FullSize {
     MatInputModule,
     Gallery,
     TagsAction,
+    DeleteAction,
   ],
   templateUrl: './search.html',
   styleUrl: './search.css',

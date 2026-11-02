@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { ApiError, ApiService } from '../../api/api.service';
+import { DeleteAction } from '../../components/gallery/actions/delete/delete';
 import { Gallery } from '../../components/gallery/gallery';
 import { FileSummary } from '../../components/gallery/file-summary';
 
@@ -47,7 +48,7 @@ class UploadRow {
 
 @Component({
   selector: 'app-upload',
-  imports: [MatCheckboxModule, MatIconModule, MatProgressBarModule, Gallery],
+  imports: [MatCheckboxModule, MatIconModule, MatProgressBarModule, Gallery, DeleteAction],
   templateUrl: './upload.html',
   styleUrl: './upload.css',
 })
