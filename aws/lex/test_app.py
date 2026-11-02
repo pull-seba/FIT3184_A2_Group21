@@ -37,10 +37,11 @@ def lex_event(intent, slots, token="id-token"):
             "intent": {
                 "name": intent,
                 "slots": {
+                    # Lex leaves interpretedValue out when it can't resolve the words.
                     name: {
                         "value": {
                             "originalValue": said,
-                            "interpretedValue": value,
+                            **({"interpretedValue": value} if value else {}),
                         }
                     }
                     if said
@@ -163,10 +164,62 @@ def test_lost_pet_search_sends_species_and_colour():
     )
 
 
-def test_missing_token_asks_to_sign_in_without_searching():
-    response, search = run(lex_event("FindPhotos", FOXES_YESTERDAY, token=None))
-    search.assert_not_called()
+def test_missing_token_asks_to_sign_in_without_calling_the_gateway():
+    with mock.patch.object(app.urllib.request, "urlopen") as urlopen:
+        response = app.handler(
+            lex_event("FindPhotos", FOXES_YESTERDAY, token=None), None
+        )
+    urlopen.assert_not_called()
     assert response["messages"] == [app.text(app.SIGN_IN_AGAIN)]
+
+
+@pytest.mark.parametrize(
+    "intent, slot, question",
+    [
+        ("FindPhotos", "species", app.WHICH_ANIMAL),
+        ("FindLostPet", "pet", app.WHICH_PET),
+    ],
+)
+@pytest.mark.parametrize(
+    "said",
+    [
+        (None, None),  # "Show me photos"
+        ("kangaroos", None),  # not a tag, so Lex can't resolve it
+        ("foxes and cats", None),
+    ],
+)
+def test_no_animal_gets_the_question_and_lex_keeps_no_state(
+    intent, slot, question, said
+):
+    response, search = run(lex_event(intent, {slot: said}))
+    search.assert_not_called()
+    assert response["messages"] == [app.text(question)]
+    assert response["sessionState"]["dialogAction"] == {"type": "Close"}
+
+
+def test_unresolved_count_and_date_search_without_them():
+    # "Show me photos with at least many foxes in Melbourne" used to crash.
+    slots = {
+        "species": ("foxes", "fox"),
+        "count": ("many", None),
+        "date": ("in Melbourne", None),
+    }
+    response, search = run(lex_event("FindPhotos", slots), [result()])
+    search.assert_called_once_with("/search/tags", "id-token", {"fox": 1})
+    assert response["messages"][0] == app.text("I found 1 photo of foxes.")
+
+
+def test_unresolved_colour_searches_without_it():
+    slots = {"pet": ("cat", "cat"), "colour": ("purple", None)}
+    response, search = run(lex_event("FindLostPet", slots), [result()])
+    search.assert_called_once_with(
+        "/search/lost-pet",
+        "id-token",
+        {"species": "cat", "colour": None, "breed": None, "since_days": 30},
+    )
+    assert response["messages"][0] == app.text(
+        "I found 1 photo from the last 30 days that could show your cat:"
+    )
 
 
 @pytest.mark.parametrize(
@@ -202,20 +255,30 @@ def test_search_posts_json_with_the_users_token():
     assert json.loads(request.data) == {"fox": 1}
 
 
-def test_slot_values_are_the_tag_list():
+def bot_locale():
     class TemplateLoader(yaml.SafeLoader):
         pass
 
-    # CloudFormation tags such as !Ref don't matter for the slot values.
+    # CloudFormation tags such as !Ref don't matter for the bot's own settings.
     TemplateLoader.add_multi_constructor("!", lambda loader, suffix, node: None)
     template = yaml.load((HERE / "template.yaml").read_text(), TemplateLoader)
-    locale = template["Resources"]["ChatBot"]["Properties"]["BotLocales"][0]
+    return template["Resources"]["ChatBot"]["Properties"]["BotLocales"][0]
+
+
+def test_no_slot_is_required_so_lex_never_waits_on_a_prompt():
+    for intent in bot_locale()["Intents"]:
+        for slot in intent.get("Slots", []):
+            setting = slot["ValueElicitationSetting"]
+            assert setting["SlotConstraint"] == "Optional", slot["Name"]
+
+
+def test_slot_values_are_the_tag_list():
     values = {
         slot_type["Name"]: [
             value["SampleValue"]["Value"]
             for value in slot_type["SlotTypeValues"]
         ]
-        for slot_type in locale["SlotTypes"]
+        for slot_type in bot_locale()["SlotTypes"]
     }
     tags = json.loads((HERE / "../../shared/tags.json").read_text())
     assert values["Species"] == [tag["name"] for tag in tags["tags"]]

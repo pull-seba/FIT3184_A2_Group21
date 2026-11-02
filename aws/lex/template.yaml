@@ -79,7 +79,8 @@ Resources:
       AutoBuildBotLocales: true
       BotLocales:
         - LocaleId: en_AU
-          NluConfidenceThreshold: 0.4
+          # Measured on the live bot: gibberish and "delete all my files" peaked at 0.81, real questions started at 0.84.
+          NluConfidenceThreshold: 0.82
           SlotTypes:
             # Values are the tag names in shared/tags.json (test_app.py checks); synonyms are what people type.
             - Name: Species
@@ -160,6 +161,7 @@ Resources:
                 - Utterance: "Find photos with {count} {species}"
                 - Utterance: "Which photos have {count} or more {species}"
                 - Utterance: "Show me photos"
+                - Utterance: "{species}"
               SlotPriorities:
                 - Priority: 1
                   SlotName: species
@@ -167,17 +169,13 @@ Resources:
                   SlotName: count
                 - Priority: 3
                   SlotName: date
+              # Every slot is Optional so Lex never waits on a prompt, which rejected the next question
+              # (2 retries, then the fallback). The Lambda asks "Which animal?" and closes instead.
               Slots:
                 - Name: species
                   SlotTypeName: Species
                   ValueElicitationSetting:
-                    SlotConstraint: Required
-                    PromptSpecification:
-                      MaxRetries: 2
-                      MessageGroupsList:
-                        - Message:
-                            PlainTextMessage:
-                              Value: Which animal? I can search for foxes, rabbits, feral pigs, cane toads, cats and dogs.
+                    SlotConstraint: Optional
                 - Name: count
                   SlotTypeName: AMAZON.Number
                   ValueElicitationSetting:
@@ -214,13 +212,7 @@ Resources:
                 - Name: pet
                   SlotTypeName: PetSpecies
                   ValueElicitationSetting:
-                    SlotConstraint: Required
-                    PromptSpecification:
-                      MaxRetries: 2
-                      MessageGroupsList:
-                        - Message:
-                            PlainTextMessage:
-                              Value: Is it a cat or a dog?
+                    SlotConstraint: Optional
                 - Name: colour
                   SlotTypeName: Colour
                   ValueElicitationSetting:
