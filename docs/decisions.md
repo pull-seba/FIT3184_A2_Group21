@@ -33,6 +33,7 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 | Lost pet embeddings use Vertex AI `multimodalembedding@001`, 1408 numbers (29 Oct) | Images and text share one embedding space, so the same model serves search by photo and by description ("ginger cat") for the page and the chatbot. Same cloud as Firestore vector search, so it doesn't depend on the AWS federation. Chosen over CLIP (a 1-2 GB container), Titan Multimodal (would also need the federated AWS role) and Gemini Embedding 2 (3072 numbers by default, over Firestore's limit) |
 | `/notifications/subscriptions` runs as the GCP function `notify/subscriptions`, which calls SNS with short-lived AWS credentials exchanged for its Google ID token (30 Oct) | Same path as every other route: behind the gateway's Cognito check, no public URL, caller from `ecoguard_common.auth.get_user`. No AWS keys, and SNS stays the one place alert tags live |
 | The Lex fulfilment Lambda forwards the user's Cognito ID token, sent by the widget as the Lex request attribute `idToken`, to the gateway as the bearer token (1 Nov) | No keys anywhere, and the gateway checks it like any other call. Request attributes last one turn, so Lex doesn't store the token in the session. Conversation logs must stay off and the fulfilment Lambda must never log the event, because either would record it |
+| Cognito's temporary password step: keep both paths. Self sign-up verifies the email with a code; users created in the Cognito console (or `admin-create-user`) get an emailed temporary password, and the sign-in page makes them choose a new one (2 Nov) | Self sign-up never gives a temporary password, and calling `AdminCreateUser` from the sign-up page would need a public endpoint with admin rights on the pool. The demo shows both: a live sign-up, then a console-invited user's forced password change |
 
 ## Proposed (confirm by the date shown)
 
@@ -45,5 +46,4 @@ When a Proposed or Open item is settled, move it to Decided with the date, and u
 
 | Question | Owner | Decide by | Options |
 | --- | --- | --- | --- |
-| Cognito's temporary password step | 1 | Tue 27 Oct | The spec asks for email verification and a temporary password change, but self sign-up gives no temporary password; admin-created users do. Ask on Ed, or create users through `AdminCreateUser` from the sign-up page |
 | Who owns the team report, architecture diagram and user guide | All | Tue 27 Oct | Lighter loads: members 1 and 2 |
