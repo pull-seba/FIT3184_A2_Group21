@@ -257,6 +257,15 @@ def test_thumbnail_is_320_on_the_longest_side_with_the_aspect_ratio_kept(
     assert (thumbnail_width, thumbnail_height) == thumbnail_size
 
 
+def test_an_image_under_320_px_keeps_its_size(db, gcs):
+    content = image_bytes(100, 50)
+    stored(gcs, content)
+    main.handler(finalized(object_data(content)))
+
+    data, _ = gcs.saved[f"thumbs/{sha(content)}.jpg"]
+    assert decoded(data).shape[:2] == (50, 100)
+
+
 def test_thumbnail_is_compressed(gcs):
     main.handler(finalized(object_data()))
     data, _ = gcs.saved[f"thumbs/{SHA}.jpg"]
@@ -340,7 +349,7 @@ def test_video_record_gets_frames_poster_and_duration(db, gcs):
         "pipeline": {"thumbnail": "done", "frames": "done"},
     }
     poster, _ = gcs.saved[f"thumbs/{file_id}.jpg"]
-    assert decoded(poster).shape[:2] == (180, 320)  # 160x90 scaled up
+    assert decoded(poster).shape[:2] == (90, 160)  # 160x90 stays that size
     assert decoded(poster).mean() == pytest.approx(0, abs=6)  # frame 0
 
 
