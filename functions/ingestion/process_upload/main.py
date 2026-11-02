@@ -115,10 +115,12 @@ def jpeg(image, quality: int = 90) -> bytes:
 
 
 def thumbnail(image) -> bytes:
-    """Longest side 320 px with the aspect ratio kept, JPEG quality 80.
-    INTER_AREA averages the pixels it drops, so shrinking stays smooth."""
+    """Longest side at most 320 px with the aspect ratio kept, JPEG quality
+    80. A smaller image keeps its size: enlarging it could make the thumbnail
+    bigger than the original. INTER_AREA averages the pixels it drops, so
+    shrinking stays smooth."""
     height, width = image.shape[:2]
-    scale = THUMBNAIL_SIDE / max(width, height)
+    scale = min(1, THUMBNAIL_SIDE / max(width, height))
     size = (round(width * scale), round(height * scale))
     return jpeg(cv2.resize(image, size, interpolation=cv2.INTER_AREA), 80)
 
