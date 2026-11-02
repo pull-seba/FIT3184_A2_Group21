@@ -24,7 +24,7 @@ Run `cd frontend && npm start` and open http://localhost:5173.
 | Sign in and out | `/sign-in`: the top bar shows your name. **Sign out** revokes the tokens and returns to sign-in |
 | Temporary password | Create a user with the command below, then sign in with the emailed temporary password: you're asked to choose a new one |
 | Forgot password | `/sign-in`, **Forgot password?**, then the emailed code and a new password |
-| Protected pages | Signed out, open http://localhost:5173/: you're redirected to `/sign-in` |
+| Protected pages | Signed out, open http://localhost:5173/: you're redirected to `/sign-up`, which links to sign-in |
 
 ```sh
 aws cognito-idp admin-create-user --region us-east-1 --user-pool-id <UserPoolId> --username someone@example.com \

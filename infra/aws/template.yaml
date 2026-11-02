@@ -45,7 +45,7 @@ Resources:
         EmailSubject: Verify your Aussie EcoGuard account
         EmailMessage: "Welcome to Aussie EcoGuard! Your verification code is {####}"
       # Admin-invited users get a temporary password they must change at first sign-in. Both paths stay
-      # open because the spec asks for the temporary password change (open question in docs/decisions.md).
+      # open because the spec asks for the temporary password change (docs/decisions.md, 2 Nov).
       AdminCreateUserConfig:
         AllowAdminCreateUserOnly: false
         InviteMessageTemplate:
