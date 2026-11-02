@@ -1,0 +1,94 @@
+.search {
+  max-width: 960px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+  color: var(--mat-sys-primary);
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.search > h2 {
+  margin-top: 32px;
+}
+
+.hint {
+  margin: 0 0 12px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.panel {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--mat-sys-surface-container);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* .stepper replaces the browser's own arrows, which can't be sized to fill the field. */
+input[type='number'] {
+  appearance: textfield;
+}
+
+input[type='number']::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+.stepper {
+  display: grid;
+  width: 32px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 0 var(--mat-sys-corner-extra-small) var(--mat-sys-corner-extra-small) 0;
+}
+
+.stepper button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface);
+  cursor: pointer;
+}
+
+.stepper button:hover {
+  background: var(--mat-sys-surface-container-high);
+}
+
+.lookup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.lookup mat-form-field {
+  flex: 1 1 280px;
+}
+
+a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--mat-sys-primary);
+}
+
+.error {
+  color: var(--mat-sys-error);
+}

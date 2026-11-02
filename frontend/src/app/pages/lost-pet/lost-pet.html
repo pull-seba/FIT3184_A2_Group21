@@ -1,0 +1,81 @@
+<main class="lost-pet">
+  <h1>Lost pet</h1>
+  <p class="hint">
+    Look for your cat or dog in other people's uploads. Add a photo of your pet to see the closest
+    lookalikes, or describe it by species and colour. Only public sightings are searched. Your photo
+    is only used for this search and is never stored.
+  </p>
+
+  <div class="controls">
+    <label class="choose">
+      <mat-icon aria-hidden="true">add_a_photo</mat-icon>
+      {{ file() ? 'Choose another photo' : 'Add a photo (optional)' }}
+      <input type="file" [accept]="accepted" (change)="choose($event)" />
+    </label>
+    @if (file()) {
+      <button mat-button type="button" (click)="removePhoto()">Remove photo</button>
+    }
+  </div>
+
+  @if (preview(); as preview) {
+    <img class="preview" [src]="preview" [alt]="'Photo of your pet: ' + file()?.name" />
+  }
+
+  <div class="fields">
+    <mat-form-field appearance="outline">
+      <mat-label>Species</mat-label>
+      <mat-select [value]="species()" (selectionChange)="species.set($event.value)">
+        @if (file()) {
+          <mat-option value="">Any</mat-option>
+        }
+        @for (name of speciesList; track name) {
+          <mat-option [value]="name">{{ name }}</mat-option>
+        }
+      </mat-select>
+      @if (!file()) {
+        <mat-hint>Needed unless you add a photo</mat-hint>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Colour</mat-label>
+      <mat-select [value]="colour()" (selectionChange)="colour.set($event.value)">
+        <mat-option value="">Any</mat-option>
+        @for (name of colourList; track name) {
+          <mat-option [value]="name">{{ name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Seen in the last</mat-label>
+      <mat-select [value]="sinceDays()" (selectionChange)="sinceDays.set($event.value)">
+        @for (days of dayChoices; track days) {
+          <mat-option [value]="days">{{ days }} days</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <button mat-flat-button type="button" [disabled]="!canSearch()" (click)="search()">
+    {{ loading() ? 'Searching…' : 'Search' }}
+  </button>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  <h2>Sightings</h2>
+  @if (order() && results().length > 0 && !loading()) {
+    <p class="order">{{ order() }}</p>
+  }
+  <app-gallery
+    [(files)]="results"
+    [loading]="loading()"
+    [emptyMessage]="
+      order()
+        ? 'No public sightings match. Try a longer time or fewer details.'
+        : 'Choose a species or add a photo, then search.'
+    "
+  />
+</main>

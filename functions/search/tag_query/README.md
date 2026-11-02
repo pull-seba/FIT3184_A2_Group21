@@ -6,7 +6,7 @@ Owner: member 4 · Rubric: 2.2.1
 Finds files by tag. A `POST` body such as `{"feral pig": 1, "cane toad": 3}` gives each tag a minimum count, and a file must meet every one (AND). `["cat"]` means at least one cat, and `GET ?name=cat` is the one-species form. Optional `from` and `to` days (`YYYY-MM-DD`, Melbourne time, both inclusive) filter by upload time, which the chatbot uses for "yesterday". Returns `{"results": [FileSummary]}`, newest first, with fresh signed URLs.
 
 ## Trigger
-HTTP through API Gateway: `POST /search/tags` and `GET /search/species` (see `docs/contracts/api-routes.md`). Both routes call this function, which tells them apart by method.
+HTTP through API Gateway: `POST /search/tags` and `GET /search/species` (see `docs/contracts/api-routes.md`). Both routes call this function, which tells them apart by method. Answers the browser's CORS preflight (`OPTIONS`, no token) with `204`, as `infra/gateway/README.md` asks.
 
 ## Service account
 `fn-tag-query@ecoguard-g21.iam.gserviceaccount.com`
@@ -26,6 +26,8 @@ python -m pytest
 ```
 
 ## Deploy (a person runs this)
+`infra/gcp/search.sh` creates the service accounts and roles, deploys all three search functions and lets the gateway call them. To redeploy only this one:
+
 Cloud Functions gen2 names allow only lowercase letters, digits and hyphens, so the function is `tag-query`.
 ```bash
 cp -r ../../../shared/python/ecoguard_common .   # gitignored copy of the shared package

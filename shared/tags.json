@@ -1,5 +1,5 @@
 {
-  "_note": "Owner: member 3. Tag names are lowercase and singular and may contain spaces. model_label_map translates detector labels to tags, matched case-insensitively; any label not in it is dropped. v2 (28 Oct): Rekognition label names confirmed from a 30-image pilot (tools/testset). Frog, Amphibian, Hare, Canine, Coyote and Wolf are left out on purpose because they also fire on lookalikes (tree frogs, hares, foxes vs dogs).",
+  "_note": "Owner: member 3. Tag names are lowercase and singular and may contain spaces. model_label_map translates detector labels to tags, matched case-insensitively; any label not in it is dropped. v2 (28 Oct): Rekognition label names confirmed from a 30-image pilot (tools/testset). Frog, Amphibian, Hare, Canine, Coyote and Wolf are left out on purpose because they also fire on lookalikes (tree frogs, hares, foxes vs dogs). lost_pet_colours (31 Oct) are the colours a lost pet sighting can have: tagging picks one per crop, and the Lex bot uses the same list as a slot type. Adding them leaves version at 2, because version tracks the label map that config/model's thresholds were chosen for.",
   "version": 2,
   "tags": [
     { "name": "fox", "group": "pest" },
@@ -10,6 +10,7 @@
     { "name": "dog", "group": "pet" }
   ],
   "lost_pet_species": ["cat", "dog"],
+  "lost_pet_colours": ["ginger", "black", "white", "grey", "tabby", "brown", "cream"],
   "model_label_map": {
     "fox": "fox",
     "red fox": "fox",

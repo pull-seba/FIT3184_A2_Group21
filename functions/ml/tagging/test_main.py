@@ -4,12 +4,15 @@ calls Rekognition."""
 import base64
 import hashlib
 import json
+from datetime import datetime, timezone
 from unittest import mock
 
 import pytest
 from cloudevents.http import CloudEvent
 from google.api_core import exceptions
+import requests
 from google.cloud import firestore
+from google.cloud.firestore_v1.vector import Vector
 
 from ecoguard_ml import BadImage
 
@@ -19,9 +22,17 @@ with (
 ):
     import main
 
+# The real writer, kept before the autouse fixture below replaces it.
+real_write_sightings = main.write_sightings
+
 CONTENT = b"pretend these are the bytes of fox-cam3.jpg"
 SHA = hashlib.sha256(CONTENT).hexdigest()
-CONFIG = {"version": "2026-10-29.1", "detector": "rekognition"}
+CONFIG = {
+    "version": "2026-10-29.1",
+    "detector": "rekognition",
+    "embedding_model": "multimodalembedding@001",
+}
+UPLOADED = datetime(2026, 10, 31, 9, 43, 0, 123000, tzinfo=timezone.utc)
 
 
 def object_data(**overrides):
@@ -32,6 +43,7 @@ def object_data(**overrides):
         "generation": "1761471780000000",
         "contentType": "image/jpeg",
         "size": str(len(CONTENT)),
+        "timeCreated": "2026-10-31T09:43:00.123Z",
         "metadata": {"uploaded-by": "cognito-sub-1", "is-public": "true"},
     }
     data.update(overrides)
@@ -99,6 +111,21 @@ def write_tags(monkeypatch):
     write_tags = mock.Mock()
     monkeypatch.setattr(main, "write_tags", write_tags)
     return write_tags
+
+
+@pytest.fixture(autouse=True)
+def pets(monkeypatch):
+    """No cats or dogs unless a test says so, so no Vertex AI calls."""
+    pets = mock.Mock(return_value=[])
+    monkeypatch.setattr(main.sightings, "pets", pets)
+    return pets
+
+
+@pytest.fixture(autouse=True)
+def write_sightings(monkeypatch):
+    write_sightings = mock.Mock()
+    monkeypatch.setattr(main, "write_sightings", write_sightings)
+    return write_sightings
 
 
 def doc(db):
@@ -294,3 +321,147 @@ def test_tags_write_replaces_only_tagging_fields(db):
         merge=["tags", "model_version", "tagged_at", "pipeline.tagging"],
     )
     doc(db).get.assert_called_once_with(transaction=transaction)
+
+
+# ---------- lost pet sightings ----------
+
+
+def pet(species="cat", colour="ginger", bbox=(0.1, 0.2, 0.3, 0.4)):
+    """One entry as sightings.pets returns it."""
+    return {
+        "species": species,
+        "colour": colour,
+        "breed": None,
+        "embedding": [0.1] * 1408,
+        "bbox": list(bbox),
+    }
+
+
+def test_image_pets_get_the_upload_time_and_is_public_from_the_event(
+    pets, write_sightings
+):
+    two_cats = [pet(), pet(colour="black", bbox=(0.5, 0.5, 0.2, 0.2))]
+    pets.return_value = two_cats
+    main.on_upload(finalized(object_data()))
+
+    pets.assert_called_once_with(CONTENT, [], CONFIG)
+    file_id, written, config, uploaded_at, is_public = (
+        write_sightings.call_args.args
+    )
+    assert file_id == SHA and config == CONFIG
+    assert written == [p | {"frame_index": None} for p in two_cats]
+    assert uploaded_at == UPLOADED  # a datetime, so a Firestore timestamp
+    assert is_public is True
+
+
+def test_private_upload_gives_private_sightings(pets, write_sightings):
+    pets.return_value = [pet()]
+    metadata = {"uploaded-by": "cognito-sub-1", "is-public": "false"}
+    main.on_upload(finalized(object_data(metadata=metadata)))
+    assert write_sightings.call_args.args[4] is False
+
+
+def test_sightings_are_written_before_tags(write_sightings, write_tags):
+    """tag_file skips a file whose tagging is done, so tags first would
+    leave a failed sightings write never retried."""
+    order = mock.Mock()
+    order.attach_mock(write_sightings, "sightings")
+    order.attach_mock(write_tags, "tags")
+    main.on_upload(finalized(object_data()))
+    assert [name for name, _, _ in order.mock_calls] == ["sightings", "tags"]
+
+
+def test_vertex_ai_error_is_raised_and_nothing_is_written(
+    pets, write_sightings, write_tags
+):
+    pets.side_effect = requests.HTTPError("429 Too Many Requests")
+    with pytest.raises(requests.HTTPError):
+        main.on_upload(finalized(object_data()))
+    write_sightings.assert_not_called()
+    write_tags.assert_not_called()
+
+
+def test_repeat_event_writes_no_sightings(db, pets, write_sightings):
+    stored_record(
+        db,
+        {"model_version": CONFIG["version"], "pipeline": {"tagging": "done"}},
+    )
+    main.on_upload(finalized(object_data()))
+    pets.assert_not_called()
+    write_sightings.assert_not_called()
+
+
+def test_video_sightings_have_frame_index_and_the_record_fields(
+    db, pets, write_sightings
+):
+    stored_record(db, {"uploaded_at": UPLOADED, "is_public": False})
+    pets.side_effect = [[], [pet()], [pet(colour="black")]]
+    main.on_frames_ready(frames_ready(frame_message(3)))
+
+    _, written, _, uploaded_at, is_public = write_sightings.call_args.args
+    # numbered on across frames: frame 1's cat is _0, frame 2's is _1
+    assert [p["frame_index"] for p in written] == [1, 2]
+    assert [p["colour"] for p in written] == ["ginger", "black"]
+    assert uploaded_at == UPLOADED and is_public is False
+
+
+# ---------- the sightings write ----------
+
+
+def stored_sightings(db, *ids):
+    """Sightings already in Firestore for this file."""
+    snapshots = [mock.Mock(id=i) for i in ids]
+    sightings = db.collection.return_value
+    sightings.where.return_value.stream.return_value = snapshots
+    return snapshots
+
+
+def written_ids(db):
+    calls = db.collection.return_value.document.call_args_list
+    return [c.args[0] for c in calls]
+
+
+def test_two_cats_become_sha_0_and_sha_1_with_every_schema_field(db):
+    stored_sightings(db)
+    cats = [pet() | {"frame_index": None}, pet() | {"frame_index": None}]
+    real_write_sightings(SHA, cats, CONFIG, UPLOADED, True)
+
+    db.collection.assert_called_with("sightings")
+    assert written_ids(db) == [f"{SHA}_0", f"{SHA}_1"]
+    (data,) = (
+        db.collection.return_value.document.return_value.set.call_args.args
+    )
+    assert set(data) == {
+        "file_id", "species", "colour", "breed", "embedding",
+        "embedding_model", "bbox", "frame_index", "uploaded_at",
+        "is_public", "created_at",
+    }  # fmt: skip
+    assert isinstance(data["embedding"], Vector)
+    assert data["embedding_model"] == "multimodalembedding@001"
+    assert data["created_at"] is firestore.SERVER_TIMESTAMP
+    set_call = db.collection.return_value.document.return_value.set.call_args
+    assert set_call.kwargs == {"merge": True}
+
+
+def test_repeat_write_uses_the_same_ids(db):
+    stored_sightings(db, f"{SHA}_0")
+    one_cat = [pet() | {"frame_index": None}]
+    real_write_sightings(SHA, one_cat, CONFIG, UPLOADED, True)
+    real_write_sightings(SHA, one_cat, CONFIG, UPLOADED, True)
+    assert written_ids(db) == [f"{SHA}_0", f"{SHA}_0"]
+
+
+def test_fewer_pets_than_last_time_deletes_the_extra_sightings(db):
+    old = stored_sightings(db, f"{SHA}_0", f"{SHA}_1", f"{SHA}_2")
+    one_cat = [pet() | {"frame_index": None}]
+    real_write_sightings(SHA, one_cat, CONFIG, UPLOADED, True)
+    old[0].reference.delete.assert_not_called()
+    old[1].reference.delete.assert_called_once()
+    old[2].reference.delete.assert_called_once()
+
+
+def test_fox_photo_writes_no_sightings_and_clears_old_ones(db):
+    old = stored_sightings(db, f"{SHA}_0")
+    real_write_sightings(SHA, [], CONFIG, UPLOADED, True)
+    assert written_ids(db) == []
+    old[0].reference.delete.assert_called_once()
