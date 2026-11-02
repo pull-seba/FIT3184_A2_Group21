@@ -23,6 +23,11 @@ SIGN_IN_AGAIN = (
     "Your sign-in has expired. Please sign in again, then ask me once more."
 )
 TRY_AGAIN = "Sorry, the search didn't work just now. Please try again soon."
+WHICH_ANIMAL = (
+    "Which animal? I can search one at a time: foxes, rabbits, feral pigs, "
+    'cane toads, cats or dogs. Try "Show me photos of foxes".'
+)
+WHICH_PET = 'Is it a cat or a dog? Try "Help me find a lost ginger cat".'
 
 
 class SignInNeeded(Exception):
@@ -37,6 +42,16 @@ def slot_value(intent: dict, name: str) -> dict | None:
     """What the user typed (originalValue) and what Lex made of it (interpretedValue)."""
     slot = intent["slots"].get(name)
     return slot["value"] if slot else None
+
+
+def interpreted(intent: dict, name: str) -> str | None:
+    """What Lex made of a slot, or None if it's empty or Lex couldn't resolve it.
+
+    Lex fills a slot with only an originalValue when the words don't fit its
+    type: "in Melbourne" as a date, "many" as a count, "purple" as a colour.
+    """
+    said = slot_value(intent, name)
+    return said.get("interpretedValue") if said else None
 
 
 def date_window(
@@ -77,7 +92,9 @@ def date_window(
     return first, first
 
 
-def search(path: str, token: str, body: dict) -> list[dict]:
+def search(path: str, token: str | None, body: dict) -> list[dict]:
+    if not token:
+        raise SignInNeeded
     request = urllib.request.Request(
         API_BASE + path,
         data=json.dumps(body).encode(),
@@ -149,10 +166,12 @@ def counted(results: list[dict]) -> str:
     )
 
 
-def find_photos(intent: dict, token: str) -> list[dict]:
-    species = slot_value(intent, "species")["interpretedValue"]
-    count = slot_value(intent, "count")
-    minimum = max(1, int(float(count["interpretedValue"]))) if count else 1
+def find_photos(intent: dict, token: str | None) -> list[dict]:
+    species = interpreted(intent, "species")
+    if not species:
+        return [text(WHICH_ANIMAL)]
+    count = interpreted(intent, "count")
+    minimum = max(1, int(float(count))) if count else 1
     if minimum == 1:
         what = f"of {plural(species)}"
     else:
@@ -162,7 +181,7 @@ def find_photos(intent: dict, token: str) -> list[dict]:
     date_said = slot_value(intent, "date")
     window = date_said and date_window(
         date_said["originalValue"],
-        date_said["interpretedValue"],
+        date_said.get("interpretedValue"),
         melbourne_today(),
     )
     if window:
@@ -186,10 +205,11 @@ def find_photos(intent: dict, token: str) -> list[dict]:
     return [text(f"I found {counted(results)} {what}{when}."), *links(results)]
 
 
-def find_lost_pet(intent: dict, token: str) -> list[dict]:
-    pet = slot_value(intent, "pet")["interpretedValue"]
-    colour = slot_value(intent, "colour")
-    colour = colour["interpretedValue"] if colour else None
+def find_lost_pet(intent: dict, token: str | None) -> list[dict]:
+    pet = interpreted(intent, "pet")
+    if not pet:
+        return [text(WHICH_PET)]
+    colour = interpreted(intent, "colour")
     described = f"{colour} {pet}" if colour else pet
 
     results = search(
@@ -226,8 +246,6 @@ def handler(event, context):
     intent = event["sessionState"]["intent"]
     token = (event.get("requestAttributes") or {}).get("idToken")
     try:
-        if not token:
-            raise SignInNeeded
         messages = INTENTS[intent["name"]](intent, token)
     except SignInNeeded:
         messages = [text(SIGN_IN_AGAIN)]
