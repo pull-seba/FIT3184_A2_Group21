@@ -74,17 +74,16 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
+              # SNS checks the subscription actions against the topic's ARN, not the
+              # subscription's, so every action names the topic.
               - Effect: Allow
                 Action:
                   - sns:Subscribe
                   - sns:ListSubscriptionsByTopic
-                Resource: !Ref AlertTopic
-              - Effect: Allow
-                Action:
                   - sns:GetSubscriptionAttributes
                   - sns:SetSubscriptionAttributes
                   - sns:Unsubscribe
-                Resource: !Sub ${AlertTopic}:*
+                Resource: !Ref AlertTopic
 
   NotifyLogs:
     Type: AWS::Logs::LogGroup
