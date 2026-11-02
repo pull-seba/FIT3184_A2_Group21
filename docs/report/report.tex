@@ -1,0 +1,232 @@
+% Build:      latexmk -xelatex report.tex
+% Word count: texcount -1 -sum report.tex  (tables, diagram and screenshots don't count)
+% Before submitting, fill in every \needsinput and update \WORDS.
+\documentclass[12pt,a4paper]{article}
+
+% --- Page geometry ------------------------------------------------------------
+\usepackage[a4paper,margin=1in,headheight=15pt]{geometry}
+
+% --- Fonts: the spec names Times New Roman at 12 pt, the rest is FIT3155's layout
+\usepackage{fontspec}
+% WSL reads the fonts from Windows; macOS and Windows find them by name.
+\IfFileExists{/mnt/c/Windows/Fonts/times.ttf}{%
+  \setmainfont{Times New Roman}[Path=/mnt/c/Windows/Fonts/, Extension=.ttf,
+    UprightFont=times, BoldFont=timesbd, ItalicFont=timesi, BoldItalicFont=timesbi]
+  \setsansfont{Arial}[Path=/mnt/c/Windows/Fonts/, Extension=.ttf,
+    UprightFont=arial, BoldFont=arialbd, ItalicFont=ariali, BoldItalicFont=arialbi]
+}{%
+  \setmainfont{Times New Roman}
+  \setsansfont{Arial}
+}
+
+% --- Graphics, colour ---------------------------------------------------------
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{pdflscape}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+
+% --- Tables and lists ---------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{xltabular}
+\usepackage{enumitem}
+\setlist{itemsep=0.25em,topsep=0.4em}
+
+% --- Headers / footers --------------------------------------------------------
+\usepackage{fancyhdr}
+
+% --- Hyperlinks ---------------------------------------------------------------
+\usepackage[hidelinks,pdftitle={FIT3184 Assignment 2 Team Report},pdfauthor={Group 21}]{hyperref}
+\urlstyle{same}
+
+% --- Header / footer layout ---------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\itshape\small\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\sectionmark}[1]{\markboth{\thesection.\ \MakeUppercase{#1}}{}}
+\setlength{\emergencystretch}{1.5em}
+
+% --- Shortcuts ----------------------------------------------------------------
+\newcommand{\code}[1]{\textit{#1}} % italics keep identifiers in Times New Roman
+\newcommand{\WORDS}{992}
+% What the team still has to supply or confirm, in red so it can't be missed.
+\newcommand{\needsinput}[1]{\textcolor{red}{\textbf{#1}}}
+% Shows screenshots/<name>.png once the file exists, a reminder until then.
+\newcommand{\shot}[1]{\par\smallskip\IfFileExists{screenshots/#1.png}%
+  {\includegraphics[width=\linewidth]{screenshots/#1.png}}%
+  {\needsinput{[SCREENSHOT: screenshots/#1.png]}}}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+
+%TC:ignore
+% -------------------------------- Title page -------------------------------- %
+\begin{titlepage}
+  \centering
+  \vspace*{5\baselineskip}
+  {\huge\bfseries FIT3184\par}
+  {\huge\bfseries Cloud Computing\par}
+  \vspace{3\baselineskip}
+  {\large\bfseries Team Report for Assignment 2\par}
+  \vspace{0.3\baselineskip}
+  {Aussie EcoGuard: Friends \& Foes, Group 21\par}
+  \vspace{0.6\baselineskip}
+  {Dylan Gorgioski \quad 33879419\par}
+  {Danny Wu \quad 34383263\par}
+  {Jenul Ferdinand \quad 33119805\par}
+  {Sebastian Gracious Pullanthyanickal \quad 33878986\par}
+  \vspace{0.6\baselineskip}
+  {Word count: \WORDS\par}
+  \vfill
+  \includegraphics[width=0.25\textwidth]{monash-logo.png}\par
+  \vspace{0.5\baselineskip}
+  {Group 21\par}
+  \vspace{0.8\baselineskip}
+  {2 November 2026\par}
+  \vspace*{2\baselineskip}
+\end{titlepage}
+
+% ----------------------------- Table of contents ---------------------------- %
+\clearpage
+\hypersetup{pageanchor=true}
+\pagenumbering{roman}
+\thispagestyle{plain}
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+%TC:endignore
+
+\section{Introduction}
+
+Aussie EcoGuard is a centralised, multi-cloud serverless system where researchers and citizens upload, automatically classify and search media files, helping track invasive pests and find lost pets across Australia.
+
+\section{Architecture}
+
+The architecture in Figure~\ref{fig:architecture} spans AWS (\code{us-east-1}) and GCP (\code{us-east1}). AWS hosts the Cognito user and identity pools, a Lex V2 chatbot with its fulfilment Lambda, an SNS publisher Lambda, and Rekognition \code{DetectLabels}. GCP hosts API Gateway, Python 3.12 Cloud Run functions, Firestore, Cloud Storage, Eventarc, Pub/Sub and Vertex AI. \needsinput{The Angular 21 app runs from its local development server.}
+
+An upload starts when the browser computes the file's SHA-256 hash and requests a signed PUT URL. If no duplicate exists, the file uploads directly to Cloud Storage. Through Eventarc, the storage event starts two Cloud Run services, which can finish in either order: one verifies the hash, writes the record and makes a compressed, aspect-ratio-preserving OpenCV thumbnail; the other detects species tags. Videos yield one frame per 10 seconds and a poster thumbnail, with frames reaching the tagging service through a \code{frames-ready} topic. Tag changes fire a Firestore trigger that publishes alerts to Pub/Sub.
+
+The system uses four cross-cloud links:
+\begin{enumerate}
+  \item The browser sends the Cognito ID token to the GCP API Gateway, which checks its signature against the user pool's public keys, its issuer and its audience before any function runs.
+  \item The Lex fulfilment Lambda calls the GCP API with the signed-in user's Cognito ID token. The chat page sends it as a Lex request attribute, so Lex doesn't store it.
+  \item For email alerts, a Pub/Sub push subscription sends a Google-signed OIDC token to an AWS Lambda, which validates the token before publishing to SNS with per-tag filter policies.
+  \item The tagging and search-by-file functions exchange their Google identity tokens for temporary AWS credentials through Workload Identity Federation, on a role allowed only \code{rekognition:DetectLabels}. Image bytes are sent for analysis and are never stored on AWS. The subscriptions function makes the same exchange, on a role limited to the alert topic's subscribers.
+\end{enumerate}
+
+%TC:ignore
+% The diagram gets its own landscape page, so its labels stay readable in the demo.
+\clearpage
+\newgeometry{margin=1.1cm}
+\begin{landscape}
+  \thispagestyle{empty}
+  \vspace*{\fill}
+  \centering
+  \input{architecture}
+  \captionof{figure}{Multi-cloud architecture of Aussie EcoGuard, drawn with the official AWS and Google Cloud architecture icons.}
+  \label{fig:architecture}
+  \vspace*{\fill}
+\end{landscape}
+\restoregeometry
+%TC:endignore
+
+\section{Design Decisions and Trade-offs}
+
+\begin{itemize}
+  \item \textbf{Provider Split:} The specification requires AWS Cognito, Lex and SNS. Keeping files, data and compute together on GCP avoids storing files on two clouds.
+  \item \textbf{Signed URLs:} Buckets stay private and no stored link expires, because URLs are signed per response. Uploads use \code{if-generation-match: 0} to block overwrites.
+  \item \textbf{File Deduplication:} File IDs are the SHA-256 hash of the file bytes, so duplicates are caught by content, not file names or sizes.
+  \item \textbf{Separate Buckets:} Thumbnails and frames go in a separate bucket, because storage triggers can't filter by prefix and would re-trigger the pipeline.
+  \item \textbf{Video Tag Counting:} A video's count for each tag is the maximum found in any single frame. Summing would count the same animal once per frame.
+  \item \textbf{Merge-only Firestore Writes:} Several functions write the same record, and events can arrive twice or in either order, so each function merges only its own fields.
+  \item \textbf{Model Selection:} Amazon Rekognition was selected because it names the project's species directly, while a stock YOLO or MegaDetector would need a second species model. A \code{model\_label\_map} leaves out labels such as Amphibian and Canine, which also fired on tree frogs and on both foxes and dogs. The trade-off is a cross-cloud call per image.
+  \item \textbf{Embeddings Strategy:} Vertex AI multimodal embeddings paired with Firestore vector search were chosen because images and text share a single embedding space: one model powers photo search and labels each sighting's colour for description search. It beat CLIP (a 1--2\,GB container), Titan Multimodal (also needs the federated AWS role) and Gemini Embedding 2 (its default 3072 dimensions exceed Firestore's limit).
+  \item \textbf{Region Selection:} GCP uses \code{us-east1} because Firestore's location is fixed and Eventarc storage triggers must share their bucket's region. AWS services use the nearby \code{us-east-1}. The trade-off is higher latency for Australian users.
+\end{itemize}
+
+\section{Security}
+
+Every backend route except CORS preflight requires a valid Cognito ID token, and Cloud Run services reject unauthenticated invocations. Each GCP function has its own least-privilege service account, and each Lambda its own IAM role. For example, \code{on\_tags\_changed} holds only \code{roles/pubsub.publisher} on the \code{tag-changes} topic and \code{roles/eventarc.eventReceiver}, and reads nothing from Firestore. No long-lived keys or tokens exist in the repository or frontend bundle. Because Pub/Sub can't sign AWS requests, the alert Lambda's URL is public and rejects any request without a valid Google token. Photos submitted for file and lost pet searches are processed in memory and never stored or indexed.
+
+\section{Limitations and Future Work}
+
+Rekognition undercounts groups of cane toads. In the 140-photo bake-off, photos with two or more animals got a count of 2+ for 100\% of pigs, 67\% of foxes, and 33\% each of toads and rabbits, with one over-count. A counting model could be added later through \code{config/model}. Also partly complete:
+
+\begin{itemize}
+  \item \needsinput{\textbf{Hosting:} Firebase Hosting remains to be enabled, with its origin added to the media bucket's CORS.}
+  \item \textbf{Temporary passwords:} Self sign-up verifies email by code, so only admin-created users receive a temporary password to change.
+  \item \textbf{Search by file:} It accepts photos only; videos would need frame extraction during the request.
+  \item \textbf{Lost pet search:} It filters by species and colour, not breed, because no model gives breeds.
+  \item \textbf{Alerts:} A redelivered event can send a second email; deduplicating needs another Firestore collection.
+\end{itemize}
+
+\section{Contribution Table}
+
+%TC:ignore
+\noindent
+\begin{xltabular}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}X@{}}
+  \toprule
+  \textbf{Name and ID} & \textbf{Percentage} & \textbf{Contribution} \\
+  \midrule
+  \endhead
+  Sebastian Gracious Pullanthyanickal, 33878986 & \needsinput{[\%]} & Member 1 (Identity \& Cross-cloud): Owned API Gateway, the Angular shell and API client, Cognito sign-up, sign-in and sign-out, tag alert emails, the subscriptions function with its federated SNS role, and the Alerts page. \\
+  \addlinespace
+  Dylan Gorgioski, 33879419 & \needsinput{[\%]} & Member 2 (Ingestion \& Storage): Signed-URL browser uploads to Cloud Storage, SHA-256 deduplication, thumbnails, video frame extraction and file deletion, with the Upload page, the gallery's Delete action and the Firestore and storage contracts. \\
+  \addlinespace
+  Danny Wu, 34383263 & \needsinput{[\%]} & Member 3 (ML \& Detection): Built Rekognition tagging with its federated AWS role, the tag vocabulary and model config, the 140-photo bake-off, Vertex AI embeddings, search by file with in-memory tagging, lost pet search, and those two pages. \\
+  \addlinespace
+  Jenul Ferdinand, 33119805 & \needsinput{[\%]} & Member 4 (Search \& Chatbot): Built tag queries, thumbnail lookup, the results gallery, bulk tag editing, and the Search and Chat pages. Configured the Lex V2 bot and its fulfilment Lambda, and set up the GCP project. \\
+  \bottomrule
+\end{xltabular}
+%TC:endignore
+
+\clearpage
+\section{User Guide}
+
+%TC:ignore
+\noindent
+\begin{xltabular}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.3cm}>{\raggedright\arraybackslash}p{5.5cm}>{\raggedright\arraybackslash}X@{}}
+  \toprule
+  \textbf{Feature} & \textbf{Steps} & \textbf{Expected Result} \\
+  \midrule
+  \endhead
+  \textbf{Start} & \needsinput{Run \code{cd frontend \&\& npm install \&\& npm start}, then open \url{http://localhost:5173}.} & The sign-in page opens. Other pages redirect here until you sign in. \\
+  \addlinespace
+  \textbf{Auth \& Sign-out} & Sign up with your name, email and password, then enter the emailed code. Press Sign out, then sign in again. & Verifying the code signs you in to the Home page. Sign out returns you to sign-in. \shot{auth} \\
+  \addlinespace
+  \textbf{Upload} & On Upload, choose a photo or video, leaving Public ticked. Upload the same file again. & The first shows ``Uploaded and tagged.'' The second shows ``Already uploaded, so it was skipped.'' \shot{upload} \\
+  \addlinespace
+  \textbf{Tag Search} & On Search, enter a minimum count for each tag (e.g., fox: 2), then press Search. Click a thumbnail. & The gallery shows files meeting every count. Clicking opens the full-size media. \shot{tag-search} \\
+  \addlinespace
+  \textbf{Thumbnail URL Search} & On Search, copy a thumbnail's address, paste it under By thumbnail URL and press Find full size. & A link to the full-size file appears. \shot{thumbnail} \\
+  \addlinespace
+  \textbf{Search by File} & On Search by file, choose a photo and press Search. & The page lists the detected tags and the matching files. The query file isn't stored. \shot{by-file} \\
+  \addlinespace
+  \textbf{Lost Pet Search} & On Lost pet, add a photo, or choose a species and colour, then press Search. & The closest matching public sightings appear. \shot{lost-pet} \\
+  \addlinespace
+  \textbf{Bulk Edit Tags} & In the Search results, select several files, choose tags and press Add or Remove. & Tags update on all selected files. \shot{bulk-tags} \\
+  \addlinespace
+  \textbf{Delete Files} & Select files in a gallery, press Delete and confirm. & Files, thumbnails, frames and database records are removed. \shot{delete} \\
+  \addlinespace
+  \textbf{Tag Alerts} & On Alerts, tick a tag (e.g., fox) and press Save. Confirm the subscription from the AWS email the first time. Upload a matching photo. & You receive one email through SNS for the matching photo, and none for other tags. \shot{alert-email} \\
+  \addlinespace
+  \textbf{Chatbot} & On Chat, type ``Help me find a lost ginger cat''. & The chatbot parses the intent and returns clickable result links. \shot{chat} \\
+  \bottomrule
+\end{xltabular}
+%TC:endignore
+
+\section{Repository Link and Team Process}
+
+\textbf{Repository Link:} \url{https://github.com/pull-seba/FIT3184_A2_Group21}
+
+\textbf{Team Process:} Each member owned one backend slice and its UI. The team agreed contracts for the Firestore schema, storage layout, API routes and events. Most changes went through pull requests, with a Ruff format check in CI, and a few small changes were pushed directly to \code{main}. A feature freeze was planned for 31 October, but integration continued until submission.
+
+\section{AI Use}
+
+Claude Code assisted development, and Google Gemini and Claude assisted in drafting this report and its architecture diagram. The team reviewed the generated work, understands the implementation, and can explain and modify all generated code during the demonstration.
+
+\end{document}
