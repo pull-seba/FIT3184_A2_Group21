@@ -113,9 +113,6 @@ else
   echo "process-upload isn't deployed yet: deploy it, then re-run this script for its Invoker grant." >&2
 fi
 
-# The gateway calls each HTTP function as its own account (infra/gateway/README.md), and only it may.
-GATEWAY="ecoguard-gateway@$PROJECT_ID.iam.gserviceaccount.com"
-for function in upload-init get-file; do
 # delete_files lists and deletes each file's objects in both buckets, and deletes its record and
 # sightings. objectUser is the narrowest predefined role that includes delete.
 bucket_role "$MEDIA_BUCKET" "$DELETE_FILES" roles/storage.objectUser
@@ -124,7 +121,7 @@ project_role "serviceAccount:$DELETE_FILES" roles/datastore.user
 
 # The gateway calls each HTTP function as its own account (infra/gateway/README.md), and only it may.
 GATEWAY="ecoguard-gateway@$PROJECT_ID.iam.gserviceaccount.com"
-for function in upload-init delete-files; do
+for function in upload-init get-file delete-files; do
   if gcloud run services describe "$function" --project="$PROJECT_ID" --region="$REGION" >/dev/null 2>&1; then
     gcloud run services add-iam-policy-binding "$function" --project="$PROJECT_ID" --region="$REGION" \
       --member="serviceAccount:$GATEWAY" --role=roles/run.invoker >/dev/null
